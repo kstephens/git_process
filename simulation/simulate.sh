@@ -1,4 +1,21 @@
 #!/bin/bash
+# ANSI terminal sequences:
+_esc=''
+_csi="${_esc}["
+_vt_NORM="${_csi}0m"		# Normal text.
+_vt_HI="${_csi}1m"              # Bold text.
+_vt_LOW="${_csi}2m"             # half-bright.
+_vt_UNDER="${_csi}4m"           # Underscored text.
+_vt_BLINK="${_csi}5m"           # Blinking text.
+_vt_INV="${_csi}7m"		# Inverse text.
+_vt_LOW_RED="${_csi}2;31m"
+_vt_LOW_GREEN="${_csi}2;32m"
+_vt_LOW_YELLOW="${_csi}2;33m"
+_vt_LOW_BLUE="${_csi}2;34m"
+_vt_LOW_MAGENTA="${_csi}2;35m"
+_vt_LOW_CYAN="${_csi}2;36m"
+_vt_LOW_WHITE="${_csi}2;37m"
+
 # Defaults
 site=site.com
 app=app
@@ -29,22 +46,6 @@ then
   -e "s#\(comment \)\(.*\)#\\1${_vt_HI}${_vt_UNDER}\\2${_vt_NORM}#"
   exit $?
 fi
-
-_esc=''
-_csi="${_esc}["
-_vt_NORM="${_csi}0m"		# Normal text.
-_vt_HI="${_csi}1m"              # Bold text.
-_vt_LOW="${_csi}2m"             # half-bright.
-_vt_UNDER="${_csi}4m"           # Underscored text.
-_vt_BLINK="${_csi}5m"           # Blinking text.
-_vt_INV="${_csi}7m"		# Inverse text.
-_vt_LOW_RED="${_csi}2;31m"
-_vt_LOW_GREEN="${_csi}2;32m"
-_vt_LOW_YELLOW="${_csi}2;33m"
-_vt_LOW_BLUE="${_csi}2;34m"
-_vt_LOW_MAGENTA="${_csi}2;35m"
-_vt_LOW_CYAN="${_csi}2;36m"
-_vt_LOW_WHITE="${_csi}2;37m"
 
 color_=RED
 color_somebody=RED
