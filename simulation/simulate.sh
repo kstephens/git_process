@@ -57,6 +57,7 @@ then
   # set -x
   exec 3>&2
   "$0" _REWRITING_OUTPUT=1 "$@" 2>&1 | 
+  fgrep -v ' _set_task ' |
   sed \
   -e "s#file:////.*/gh/#git@git.${site}/#g" \
   -e "s#\(comment \)\(.*\)#\\1${_vt_HI}${_vt_UNDER}\\2${_vt_NORM}#"
@@ -338,6 +339,8 @@ logout
 _set_task $task_2
 
 comment "### Dev ($dev) alters tests before changing code to Task $task spec."
+ssh $dev@$dev.dev
+cd $user_dir/$dev/$app
 vi test.sh <<EOF
 #!/bin/bash
 PS4="\$0: "
@@ -388,11 +391,6 @@ comment "## Dev ($dev) prepares task candidate for QA and release."
 ssh $dev@$dev.dev
 cd $user_dir/$dev/$app
 
-comment "### Dev ($dev) pulls down main master and creates task candidate branch for Task ${task}."
-git checkout master
-git pull origin master
-git branch ${task}c1
-git checkout ${task}c1
 comment "### Dev ($dev) merges task work into task candidate branch."
 git merge --squash ${task}
 git commit -m "${task}: foo.sh: output $task." -a
@@ -413,7 +411,7 @@ comment "### QA checkout ${task}c1."
 git checkout ${task}c1
 git branch --color
 comment "### QA (clara) runs tests."
-bash ./test.sh
+./test.sh
 bash ./foo.sh > result.out && fgrep -q "./foo.sh $task" result.out
 
 comment "### QA (clara) marks task approved, tags task candidate."
@@ -442,7 +440,7 @@ git clone $gh/$main/$app
 cd $app
 git pull
 git checkout ${rel}
-bash ./test.sh
+./test.sh
 git tag -a -m "${rel}: Release Candidate ${rel}c1." ${rel}c1
 git tag -l
 git push --tags origin
@@ -470,7 +468,7 @@ ssh $prod_user@$stage.prod
 cd $prod_dir/$app
 
 git checkout master
-bash ./test.sh
+./test.sh
 bash ./foo.sh option > result.out; fgrep -q './foo.sh std' result.out
 git log
 
@@ -483,7 +481,7 @@ fgrep -q "You are in 'detached HEAD' state." result.out
 git log
 
 comment "### Ops runs sanity check."
-bash ./test.sh
+./test.sh
 bash ./foo.sh option > result.out; fgrep -q "./foo.sh $task_1" result.out
 
 comment "### Ops pushes ${rel}p1 tag."
