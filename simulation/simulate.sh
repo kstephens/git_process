@@ -40,6 +40,14 @@ rel_dir=$work_dir/r
 pause=
 #pause=1
 
+_set_task() {
+  { set +x; } 1>/dev/null 2>&1
+  echo "..."
+  task="$1"
+  eval rel=\$${task}_rel dev=\$${task}_dev
+  set +x
+}
+
 # Overrides
 for expr in "$@"; do eval "$expr"; done
 
@@ -237,20 +245,9 @@ git push origin $rel
 logout
 done
 
-task=$task_1; eval rel=\$${task}_rel dev=\$${task}_dev
-comment "## Dev ($dev) works on Task ${task} scheduled for Release ${rel}."
-ssh $dev@$dev.dev
-cd $user_dir/$dev/$app
-
-comment "### Dev ($dev) creates task branch ${task}."
-git checkout master
-git pull origin master
-git branch $task
-git checkout $task
-git branch --color
-logout
-
-task=$task_2; eval rel=\$${task}_rel dev=\$${task}_dev
+for t in $task_1 $task_2
+do
+_set_task $t
 comment "## Dev ($dev) works on Task ${task} scheduled for Release ${rel}."
 ssh $dev@$dev.dev
 cd $user_dir/$dev/$app
@@ -262,14 +259,16 @@ git branch $task
 git checkout $task
 git branch --color
 
-logout
-task=$task_1; eval rel=\$${task}_rel dev=\$${task}_dev
 comment "### Dev ($dev) checks for working tests before changes."
+./test.sh
+logout
+
+done
+
+_set_task $task_1
+comment "### Dev ($dev) alters tests before changing code to Task $task spec."
 ssh $dev@$dev.dev
 cd $user_dir/$dev/$app
-./test.sh
-
-comment "### Dev ($dev) alters tests before changing code to Task $task spec."
 vi test.sh <<EOF
 #!/bin/bash
 PS4="\$0: "
@@ -295,11 +294,48 @@ EOF
 git commit -m "Added $task feature." -a
 
 logout
-task=$task_2; eval rel=\$${task}_rel dev=\$${task}_dev
-comment "### Dev ($dev) checks for working tests before changes."
+_set_task $task_1
+comment "## Dev ($dev) prepares task candidate for QA and release."
 ssh $dev@$dev.dev
 cd $user_dir/$dev/$app
+
+comment "### Dev ($dev) pulls down main master and creates task candidate branch for Task ${task}."
+git checkout master
+git pull origin master
+git branch ${task}c1
+git checkout ${task}c1
+comment "### Dev ($dev) merges task work into task candidate branch."
+git merge --squash ${task}
+git commit -m "${task}: foo.sh: output $task." -a
+git log
+git push origin ${task}c1
+comment "### Dev ($dev) marks task completed."
+task $task completed
+mail -s "${task}: Task candidate ${task}c1 completed and ready for QA." qa@$site
+logout
+
+comment "## QA (clara) tests task candidate ${task}c1."
+ssh clara@clara.qa
+mkdir -p $task_dir/${task}c1
+cd $task_dir/${task}c1
+git clone $gh/$dev/$app
+cd $app
+comment "### QA checkout ${task}c1."
+git checkout ${task}c1
+git branch --color
+comment "### QA (clara) runs tests."
 ./test.sh
+bash ./foo.sh > result.out && fgrep -q "./foo.sh $task" result.out
+
+comment "### QA (clara) marks task approved, tags task candidate."
+task 1234 approved
+git tag -a -m "${task}: $user approved ${task}c1 as ${task}a1." ${task}a1
+git tag -l
+git push --tags
+mail -s '${task}: $user approved ${task}c1 as ${rel}a1.' $dev@$site rel@$site
+
+logout
+_set_task $task_2
 
 comment "### Dev ($dev) alters tests before changing code to Task $task spec."
 vi test.sh <<EOF
@@ -347,10 +383,10 @@ comment "### Dev ($dev) pushes working task branch to personal git.$site repo."
 git push origin $task
 
 logout
-task=$task_1; eval rel=\$${task}_rel dev=\$${task}_dev
+_set_task $task_1
 comment "## Dev ($dev) prepares task candidate for QA and release."
 ssh $dev@$dev.dev
-cd $user_dir/alice/$app
+cd $user_dir/$dev/$app
 
 comment "### Dev ($dev) pulls down main master and creates task candidate branch for Task ${task}."
 git checkout master
@@ -371,7 +407,7 @@ comment "## QA (clara) tests task candidate ${task}c1."
 ssh clara@clara.qa
 mkdir -p $task_dir/${task}c1
 cd $task_dir/${task}c1
-git clone $gh/alice/$app
+git clone $gh/$dev/$app
 cd $app
 comment "### QA checkout ${task}c1."
 git checkout ${task}c1
@@ -385,13 +421,13 @@ task 1234 approved
 git tag -a -m "${task}: $user approved ${task}c1 as ${task}a1." ${task}a1
 git tag -l
 git push --tags
-mail -s '${task}: $user approved ${task}c1 as ${rel}a1.' alice@$site rel@$site
+mail -s '${task}: $user approved ${task}c1 as ${rel}a1.' $dev@$site rel@$site
 logout
 
 comment "## RelEng (dave) merges approved Task ${task} into Release ${rel} branch."
 ssh dave@dave.dev
 cd $rel_dir/$rel/$app
-git remote add -f alice $gh/alice/$app
+git remote add -f $dev $gh/$dev/$app
 git checkout $rel
 git merge ${task}a1
 git commit -m "${rel}: ${task}" -a || : Fast-forward is OK
