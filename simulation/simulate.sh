@@ -413,7 +413,7 @@ comment "### QA checkout ${task}c1."
 git checkout ${task}c1
 git branch --color
 comment "### QA (clara) runs tests."
-./test.sh
+bash ./test.sh
 bash ./foo.sh > result.out && fgrep -q "./foo.sh $task" result.out
 
 comment "### QA (clara) marks task approved, tags task candidate."
@@ -442,7 +442,7 @@ git clone $gh/$main/$app
 cd $app
 git pull
 git checkout ${rel}
-./test.sh
+bash ./test.sh
 git tag -a -m "${rel}: Release Candidate ${rel}c1." ${rel}c1
 git tag -l
 git push --tags origin
@@ -470,7 +470,7 @@ ssh $prod_user@$stage.prod
 cd $prod_dir/$app
 
 git checkout master
-./test.sh
+bash ./test.sh
 bash ./foo.sh option > result.out; fgrep -q './foo.sh std' result.out
 git log
 
@@ -483,7 +483,7 @@ fgrep -q "You are in 'detached HEAD' state." result.out
 git log
 
 comment "### Ops runs sanity check."
-./test.sh
+bash ./test.sh
 bash ./foo.sh option > result.out; fgrep -q "./foo.sh $task_1" result.out
 
 comment "### Ops pushes ${rel}p1 tag."
