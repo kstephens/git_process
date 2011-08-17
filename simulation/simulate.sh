@@ -22,7 +22,8 @@ app=app
 main=stable
 stage=stage
 prod_user=prod
-rel=r20110427
+rels='r20110420 r20110427'
+rel=r20110420
 task=t1234
 prod_dir=export/web
 work_dir=export
@@ -132,7 +133,7 @@ rm -rf gh host
 mkdir -p host/{localhost,alice.dev,bob.dev,clara.qa,dave.dev,$main.qa,$stage.prod}
 
 dir="$(cd $(dirname $0) && /bin/pwd)"
-gh=file:///$dir/gh
+gh="file:///$dir/gh"
 
 ssh somebody@localhost
 cd ../..
@@ -179,7 +180,7 @@ git add test.sh
 git commit -m "Initial $main $app." -a
 ) || exit 1
 
-comment "## Devs clone main repo on git.$site."
+comment "## Devs (alice, bob, dave) clone main repo on git.$site."
 for user in alice bob dave
 do
 (
@@ -203,7 +204,7 @@ git checkout master
 rake push
 logout
 
-comment "## Devs clone their git.$site repos to local machines."
+comment "## Devs (alice, bob, dave) clone their git.$site repos to local machines."
 for user in alice bob dave
 do
   ssh $user@$user.dev
@@ -215,7 +216,9 @@ do
   logout
 done
 
-comment "## RelEng creates release branch $rel in $gh/$main/$app."
+for rel in $rels
+do 
+comment "## RelEng (dave) creates release branch $rel in $gh/$main/$app."
 ssh dave@dave.dev
 mkdir -p $rel_dir/$rel
 cd $rel_dir/$rel
@@ -225,22 +228,23 @@ git branch $rel
 git checkout $rel
 git push origin $rel
 logout
+done
 
-comment "## Dev works on Task ${task}."
+comment "## Dev (alice) works on Task ${task} scheduled for Release ${rel}."
 ssh alice@alice.dev
 cd $user_dir/alice/$app
 
-comment "### Dev creates task branch ${task}."
+comment "### Dev (alice) creates task branch ${task}."
 git checkout master
 git pull origin master
 git branch $task
 git checkout $task
 git branch --color
 
-comment "### Dev checks for working tests before changes."
+comment "### Dev (alice) checks for working tests before changes."
 ./test.sh
 
-comment "### Dev alters tests before changing code to task spec."
+comment "### Dev (alice) alters tests before changing code to task spec."
 vi test.sh <<EOF
 #!/bin/bash
 PS4="\$0: "
@@ -257,7 +261,7 @@ git diff --color test.sh
 ./test.sh || comment "Expected test failure: exit $?"
 git commit -m "Test for parameter feature" -a
 
-comment "### Dev attempts to change code according to spec (TYPO)."
+comment "### Dev (alice) attempts to change code according to spec (TYPO)."
 vi foo.sh <<EOF
 #!/bin/bash
 echo "\$0 1234 TYPO \$1"
@@ -265,11 +269,11 @@ EOF
 git commit -m "Added parameter feature." -a
 ./test.sh || comment "Unexpected test failure: exit $?"
 
-comment "### Dev rebases branch from main repo master."
+comment "### Dev (alice) rebases branch from main repo master."
 git fetch $main
 git merge $main/master
 
-comment "### Dev fixes code to task spec."
+comment "### Dev (alice) fixes code to task spec."
 vi foo.sh <<EOF
 #!/bin/bash
 echo "\$0 1234 \$1"
@@ -279,29 +283,29 @@ git diff --color foo.sh
 git commit -m "Fixed typo." -a
 
 # git log -p
-comment "### Dev pushes working task branch to personal git.$site repo."
+comment "### Dev (alice) pushes working task branch to personal git.$site repo."
 git push origin $task
 logout
 
-comment "## Dev prepares task candidate for QA and release."
+comment "## Dev (alice) prepares task candidate for QA and release."
 ssh alice@alice.dev
 cd $user_dir/alice/$app
-comment "### Dev pulls down main master and creates task candidate branch."
+comment "### Dev (alice) pulls down main master and creates task candidate branch."
 git checkout master
 git pull origin master
 git branch ${task}c1
 git checkout ${task}c1
-comment "### Dev merges task work into task candidate branch."
+comment "### Dev (alice) merges task work into task candidate branch."
 git merge --squash ${task}
 git commit -m "${task}: foo.sh: output 1234 with parameter." -a
 git log
 git push origin ${task}c1
-comment "### Dev marks task completed."
+comment "### Dev (alice) marks task completed."
 task 1234 completed
 mail -s "${task}: Task candidate ${task}c1 completed and ready for QA." qa@$site
 logout
 
-comment "## QA tests task candidate ${task}c1."
+comment "## QA (clara) tests task candidate ${task}c1."
 ssh clara@clara.qa
 mkdir -p $task_dir/${task}c1
 cd $task_dir/${task}c1
@@ -310,11 +314,11 @@ cd $app
 comment "### QA checkout ${task}c1."
 git checkout ${task}c1
 git branch --color
-comment "### QA runs tests."
+comment "### QA (clara) runs tests."
 ./test.sh
 bash ./foo.sh option > result.out && fgrep -q './foo.sh 1234 option' result.out
 
-comment "### QA marks task approved, tags task candidate."
+comment "### QA (clara) marks task approved, tags task candidate."
 task 1234 approved
 git tag -a -m "${task}: $user approved ${task}c1 as ${task}a1." ${task}a1
 git tag -l
@@ -322,7 +326,7 @@ git push --tags
 mail -s '${task}: $user approved ${task}c1 as ${rel}a1.' alice@$site rel@$site
 logout
 
-comment "## RelEng merges approved Tasks into rel branch."
+comment "## RelEng (dave) merges approved Task ${task} into Release ${rel} branch."
 ssh dave@dave.dev
 cd $rel_dir/$rel/$app
 git remote add -f alice $gh/alice/$app
@@ -347,14 +351,14 @@ git push --tags origin
 mail -c "${rel}: Release Candiate ${rel}c1 tagged." release@$site
 logout
 
-comment "## RelEng merges RC into main head and tags it."
+comment "## RelEng (dave) merges RC into main head and tags it."
 ssh dave@dave.dev
 cd $rel_dir/$rel/$app
-comment "### RelEng updates master."
+comment "### RelEng (dave) updates from master."
 git fetch
 git checkout master
 git pull origin master
-comment "### RelEng merges rel candiate ${rel}c1 and tags it into $main master."
+comment "### RelEng (dave) merges rel candiate ${rel}c1 and tags it into $main master."
 git merge ${rel}c1
 git commit -m "${rel}: Release Candidate ${rel}c1 as ${rel}p1." -a || : Fast-forward is OK
 git tag -a -m "${rel}: Release Candidate ${rel}p1." ${rel}p1
@@ -372,7 +376,7 @@ git checkout master
 bash ./foo.sh option > result.out; fgrep -q './foo.sh std' result.out
 git log
 
-comment "### Ops pull new tags and checkout ${rel}p1."
+comment "### Ops pulls new tags and checkout ${rel}p1."
 git tag -l
 git fetch
 git tag -l
@@ -380,11 +384,11 @@ git checkout ${rel}p1 > result.out 2>&1
 fgrep -q "You are in 'detached HEAD' state." result.out
 git log
 
-comment "### Ops sanity check."
+comment "### Ops runs sanity check."
 ./test.sh
 bash ./foo.sh option > result.out; fgrep -q './foo.sh 1234 option' result.out
 
-comment "### Ops push ${rel}p1 tag."
+comment "### Ops pushes ${rel}p1 tag."
 rake push tag="${rel}p1"
 mail -c "${rel}: Released ${rel}p1." production@$site
 logout
