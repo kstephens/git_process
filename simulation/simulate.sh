@@ -22,9 +22,16 @@ app=app
 main=stable
 stage=stage
 prod_user=prod
-rels='r20110420 r20110427'
-rel=r20110420
-task=t1234
+rel_1=r20110420
+rel_2=r20110427
+rels="$rel_1 $rel_2"
+task_1=t1234
+task_2=t5678
+t1234_rel="$rel_1"
+t1234_dev=alice
+t5678_rel="$rel_2"
+t5678_dev=bob
+tasks="$task_1 $task_2"
 prod_dir=export/web
 work_dir=export
 user_dir=$work_dir/u
@@ -230,28 +237,46 @@ git push origin $rel
 logout
 done
 
-comment "## Dev (alice) works on Task ${task} scheduled for Release ${rel}."
-ssh alice@alice.dev
-cd $user_dir/alice/$app
+task=$task_1; eval rel=\$${task}_rel dev=\$${task}_dev
+comment "## Dev ($dev) works on Task ${task} scheduled for Release ${rel}."
+ssh $dev@$dev.dev
+cd $user_dir/$dev/$app
 
-comment "### Dev (alice) creates task branch ${task}."
+comment "### Dev ($dev) creates task branch ${task}."
+git checkout master
+git pull origin master
+git branch $task
+git checkout $task
+git branch --color
+logout
+
+task=$task_2; eval rel=\$${task}_rel dev=\$${task}_dev
+comment "## Dev ($dev) works on Task ${task} scheduled for Release ${rel}."
+ssh $dev@$dev.dev
+cd $user_dir/$dev/$app
+
+comment "### Dev ($dev) creates task branch ${task}."
 git checkout master
 git pull origin master
 git branch $task
 git checkout $task
 git branch --color
 
-comment "### Dev (alice) checks for working tests before changes."
+logout
+task=$task_1; eval rel=\$${task}_rel dev=\$${task}_dev
+comment "### Dev ($dev) checks for working tests before changes."
+ssh $dev@$dev.dev
+cd $user_dir/$dev/$app
 ./test.sh
 
-comment "### Dev (alice) alters tests before changing code to task spec."
+comment "### Dev ($dev) alters tests before changing code to Task $task spec."
 vi test.sh <<EOF
 #!/bin/bash
 PS4="\$0: "
 trap ': exit \$?: \$BASH_COMMAND' EXIT
 set -xe
-./foo.sh param > result.out
-fgrep -q './foo.sh 1234 param' result.out
+./foo.sh > result.out
+fgrep -q './foo.sh $task' result.out
 ./bar.sh > result.out
 fgrep -q './bar.sh std' result.out
 rm result.out
@@ -259,49 +284,86 @@ rm result.out
 EOF
 git diff --color test.sh
 ./test.sh || comment "Expected test failure: exit $?"
-git commit -m "Test for parameter feature" -a
+git commit -m "Test for $task feature" -a
 
-comment "### Dev (alice) attempts to change code according to spec (TYPO)."
+comment "### Dev ($dev) attempts to change code according to Task $task spec."
 vi foo.sh <<EOF
 #!/bin/bash
-echo "\$0 1234 TYPO \$1"
+echo "\$0 $task"
+EOF
+./test.sh && comment "Test passes: exit $?"
+git commit -m "Added $task feature." -a
+
+logout
+task=$task_2; eval rel=\$${task}_rel dev=\$${task}_dev
+comment "### Dev ($dev) checks for working tests before changes."
+ssh $dev@$dev.dev
+cd $user_dir/$dev/$app
+./test.sh
+
+comment "### Dev ($dev) alters tests before changing code to Task $task spec."
+vi test.sh <<EOF
+#!/bin/bash
+PS4="\$0: "
+trap ': exit \$?: \$BASH_COMMAND' EXIT
+set -xe
+./foo.sh param > result.out
+fgrep -q './foo.sh std' result.out
+./bar.sh param > result.out
+fgrep -q './bar.sh $task param' result.out
+rm result.out
+: OK
+EOF
+git diff --color test.sh
+./test.sh || comment "Expected test failure: exit $?"
+git commit -m "Test for parameter feature" -a
+
+comment "### Dev ($dev) attempts to change code according to spec (TYPO)."
+vi bar.sh <<EOF
+#!/bin/bash
+echo "\$0 $task TYPO \$1"
 EOF
 git commit -m "Added parameter feature." -a
 ./test.sh || comment "Unexpected test failure: exit $?"
 
-comment "### Dev (alice) rebases branch from main repo master."
-git fetch $main
-git merge $main/master
-
-comment "### Dev (alice) fixes code to task spec."
-vi foo.sh <<EOF
+comment "### Dev ($dev) fixes code to task spec."
+vi bar.sh <<EOF
 #!/bin/bash
-echo "\$0 1234 \$1"
+echo "\$0 $task \$1"
 EOF
-git diff --color foo.sh
+git diff --color bar.sh
 ./test.sh && comment "Test passes: exit $?"
 git commit -m "Fixed typo." -a
 
-# git log -p
-comment "### Dev (alice) pushes working task branch to personal git.$site repo."
-git push origin $task
-logout
+comment "### Dev ($dev) rebases branch from main repo master."
+git fetch $main
+git merge $main/master
 
-comment "## Dev (alice) prepares task candidate for QA and release."
-ssh alice@alice.dev
+#comment "### Dev ($dev) checks tests again."
+#./test.sh || comment "Unexpected test failure: exit $?"
+
+# git log -p
+comment "### Dev ($dev) pushes working task branch to personal git.$site repo."
+git push origin $task
+
+logout
+task=$task_1; eval rel=\$${task}_rel dev=\$${task}_dev
+comment "## Dev ($dev) prepares task candidate for QA and release."
+ssh $dev@$dev.dev
 cd $user_dir/alice/$app
-comment "### Dev (alice) pulls down main master and creates task candidate branch."
+
+comment "### Dev ($dev) pulls down main master and creates task candidate branch for Task ${task}."
 git checkout master
 git pull origin master
 git branch ${task}c1
 git checkout ${task}c1
-comment "### Dev (alice) merges task work into task candidate branch."
+comment "### Dev ($dev) merges task work into task candidate branch."
 git merge --squash ${task}
-git commit -m "${task}: foo.sh: output 1234 with parameter." -a
+git commit -m "${task}: foo.sh: output $task." -a
 git log
 git push origin ${task}c1
-comment "### Dev (alice) marks task completed."
-task 1234 completed
+comment "### Dev ($dev) marks task completed."
+task $task completed
 mail -s "${task}: Task candidate ${task}c1 completed and ready for QA." qa@$site
 logout
 
@@ -316,7 +378,7 @@ git checkout ${task}c1
 git branch --color
 comment "### QA (clara) runs tests."
 ./test.sh
-bash ./foo.sh option > result.out && fgrep -q './foo.sh 1234 option' result.out
+bash ./foo.sh > result.out && fgrep -q "./foo.sh $task" result.out
 
 comment "### QA (clara) marks task approved, tags task candidate."
 task 1234 approved
@@ -386,7 +448,7 @@ git log
 
 comment "### Ops runs sanity check."
 ./test.sh
-bash ./foo.sh option > result.out; fgrep -q './foo.sh 1234 option' result.out
+bash ./foo.sh option > result.out; fgrep -q "./foo.sh $task_1" result.out
 
 comment "### Ops pushes ${rel}p1 tag."
 rake push tag="${rel}p1"
