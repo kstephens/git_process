@@ -441,7 +441,7 @@ git checkout ${task}c1
 git branch --color
 comment "### QA (clara) runs tests."
 ./test.sh
-bash ./foo.sh > result.out && fgrep -q "./foo.sh $task" result.out
+bash ./bar.sh > result.out && fgrep -q "./bar.sh $task" result.out
 
 comment "### QA (clara) marks task approved, tags task candidate."
 task ${task} approved
