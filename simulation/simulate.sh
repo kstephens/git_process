@@ -562,10 +562,12 @@ logout
 comment "## RelEng (dave) merges RC into main head and tags it."
 ssh dave@dave.dev
 cd $rel_dir/$rel/$app
+
 comment "### RelEng (dave) updates from master."
 git fetch
 git checkout master
-git pull # origin master
+git pull
+
 comment "### RelEng (dave) merges rel candiate ${rel}c1 and tags it into $main master."
 git merge ${rel}c1
 git commit -m "${rel}: Release Candidate ${rel}c1 as ${rel}p1." -a || : Fast-forward is OK
@@ -580,11 +582,6 @@ logout
 comment "## Ops deploys ${rel}p1 tag."
 ssh $prod_user@$stage.prod
 cd $prod_dir/$app
-
-#git checkout master
-#git pull
-#./test.sh
-#git log
 
 comment "### Ops pulls new tags and checkout ${rel}p1."
 git tag -l
