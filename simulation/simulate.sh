@@ -99,7 +99,7 @@ PS4="$default_PS4"
 logout() {
   { set +x; } 1>/dev/null 2>&1
   popd 1>/dev/null
-  echo "  LOGGED OUT"
+  echo "LOGGED OUT"
   echo ""
   user=
   host=
@@ -269,7 +269,7 @@ cd $user_dir/$dev/$app
 
 comment "### Dev ($dev) creates task branch ${task}."
 git checkout master
-git pull origin master
+git pull
 git branch $task
 git checkout $task
 git branch --color
@@ -312,7 +312,7 @@ git commit -m "Added $task feature." -a
 
 comment "### Dev ($dev) pulls down main master and creates task candidate branch for Task ${task}."
 git checkout master
-git pull origin master
+git pull
 git branch ${task}c1
 git checkout ${task}c1
 
@@ -382,12 +382,19 @@ logout
 comment "## RelEng (dave) merges RC into main head and tags it."
 ssh dave@dave.dev
 cd $rel_dir/$rel/$app
+
 comment "### RelEng (dave) updates from master."
 git fetch
 git checkout master
-git pull origin master
+git pull
+
 comment "### RelEng (dave) merges rel candiate ${rel}c1 and tags it into $main master."
 git merge ${rel}c1
+
+./test.sh
+./foo.sh option > result.out; fgrep -q "./foo.sh ${task_1}" result.out
+./bar.sh option > result.out; fgrep -q "./bar.sh std" result.out
+
 git commit -m "${rel}: Release Candidate ${rel}c1 as ${rel}p1." -a || : Fast-forward is OK
 git tag -a -m "${rel}: Release Candidate ${rel}p1." ${rel}p1
 git tag -l
@@ -397,6 +404,9 @@ git push
 git push --tags
 mail -c "${rel}: Release Candidate ${rel}c1 merged to master and tagged ${rel}p1" release@$site production@$site
 logout
+
+comment "..."
+comment "# Release ${rel} complete!"
 
 ###################################################################
 
@@ -474,7 +484,7 @@ git push origin $task
 
 comment "## Dev ($dev) prepares task candidate ${task}c1 for QA and release."
 git checkout master
-git pull origin master
+git pull $main master
 git branch ${task}c1
 
 comment "### Dev ($dev) merges task work into task candidate branch."
@@ -519,7 +529,7 @@ comment "## RelEng (dave) rebases Release ${rel} branch."
 ssh dave@dave.dev
 cd $rel_dir/$rel/$app
 git checkout master
-git pull origin master
+git pull
 git checkout $rel
 git merge master
 
@@ -555,7 +565,7 @@ cd $rel_dir/$rel/$app
 comment "### RelEng (dave) updates from master."
 git fetch
 git checkout master
-git pull origin master
+git pull # origin master
 comment "### RelEng (dave) merges rel candiate ${rel}c1 and tags it into $main master."
 git merge ${rel}c1
 git commit -m "${rel}: Release Candidate ${rel}c1 as ${rel}p1." -a || : Fast-forward is OK
@@ -594,5 +604,5 @@ rake push tag="${rel}p1"
 mail -c "${rel}: Released ${rel}p1." production@$site
 logout
 
-comment "# Release complete!"
+comment "# Release ${rel} complete!"
 
