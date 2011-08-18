@@ -19,7 +19,7 @@ _vt_LOW_WHITE="${_csi}2;37m"
 # Defaults
 site=site.com
 app=app
-main=stable
+main=main
 stage=stage
 prod_user=prod
 rel_1=r20110420
@@ -197,6 +197,7 @@ git add test.sh
 ./test.sh
 
 git commit -m "Initial $main $app." -a
+git config --bool core.bare true
 ) || exit 1
 
 comment "## Devs (alice, bob, dave) clone main repo on git.$site."
@@ -206,6 +207,8 @@ do
 mkdir -p gh/$user
 cd gh/$user
 git clone $gh/$main/$app
+cd $app
+git config --bool core.bare true
 ) || exit 1
 done
 
@@ -306,14 +309,6 @@ echo "\$0 $task"
 EOF
 ./test.sh && comment "Test passes: exit $?"
 git commit -m "Added $task feature." -a
-logout
-
-###################################################################
-
-_set_task $task_1
-comment "## Dev ($dev) prepares task candidate for QA and release."
-ssh $dev@$dev.dev
-cd $user_dir/$dev/$app
 
 comment "### Dev ($dev) pulls down main master and creates task candidate branch for Task ${task}."
 git checkout master
@@ -327,103 +322,7 @@ git commit -m "${task}: foo.sh: output $task." -a
 git log
 git push origin ${task}c1
 
-comment "### Dev ($dev) marks task completed."
-task $task completed
-mail -s "${task}: Task candidate ${task}c1 completed and ready for QA." qa@$site
-logout
-
-###################################################################
-
-comment "## QA (clara) tests task candidate ${task}c1."
-ssh clara@clara.qa
-mkdir -p $task_dir/${task}c1
-cd $task_dir/${task}c1
-git clone $gh/$dev/$app
-cd $app
-
-comment "### QA checkout ${task}c1."
-git checkout ${task}c1
-git branch --color
-comment "### QA (clara) runs tests for Task ${task}."
-./test.sh
-bash ./foo.sh > result.out && fgrep -q "./foo.sh $task" result.out
-
-comment "### QA (clara) marks Task ${task} approved, tags task candidate."
-task $task approved
-git tag -a -m "${task}: $user approved ${task}c1 as ${task}a1." ${task}a1
-git tag -l
-git push --tags
-mail -s '${task}: $user approved ${task}c1 as ${rel}a1.' $dev@$site rel@$site
-logout
-
-###################################################################
-
-_set_task $task_2
-comment "### Dev ($dev) alters tests before changing code to Task $task spec."
-ssh $dev@$dev.dev
-cd $user_dir/$dev/$app
-vi test.sh <<EOF
-#!/bin/bash
-PS4="\$0: "
-trap ': exit \$?: \$BASH_COMMAND' EXIT
-set -xe
-./foo.sh param > result.out
-fgrep -q './foo.sh std' result.out
-./bar.sh param > result.out
-fgrep -q './bar.sh $task param' result.out
-rm result.out
-: OK
-EOF
-git diff --color test.sh
-./test.sh || comment "Expected test failure: exit $?"
-git commit -m "Test for parameter feature" -a
-
-comment "### Dev ($dev) attempts to change code according to spec (TYPO)."
-vi bar.sh <<EOF
-#!/bin/bash
-echo "\$0 $task TYPO \$1"
-EOF
-git commit -m "Added parameter feature." -a
-./test.sh || comment "Unexpected test failure: exit $?"
-
-comment "### Dev ($dev) fixes code to task spec."
-vi bar.sh <<EOF
-#!/bin/bash
-echo "\$0 $task \$1"
-EOF
-git diff --color bar.sh
-./test.sh && comment "Test passes: exit $?"
-git commit -m "Fixed typo." -a
-
-comment "### Dev ($dev) rebases branch from main repo master."
-git fetch $main
-git merge $main/master
-
-#comment "### Dev ($dev) checks tests again."
-#./test.sh || comment "Unexpected test failure: exit $?"
-
-# git log -p
-comment "### Dev ($dev) pushes working task branch to personal git.$site repo."
-git push origin $task
-logout
-
-###################################################################
-
-_set_task $task_2
-comment "## Dev ($dev) prepares task candidate for QA and release."
-ssh $dev@$dev.dev
-cd $user_dir/$dev/$app
-git checkout master
-git pull origin master
-git branch ${task}c1
-git checkout ${task}c1
-
-comment "### Dev ($dev) merges task work into task candidate branch."
-git merge --squash ${task}
-git commit -m "${task}: foo.sh: output $task." -a
-git log
-git push origin ${task}c1
-comment "### Dev ($dev) marks task completed."
+comment "### Dev ($dev) marks Task ${task} completed."
 task $task completed
 mail -s "${task}: Task candidate ${task}c1 completed and ready for QA." qa@$site
 logout
@@ -441,7 +340,7 @@ git checkout ${task}c1
 git branch --color
 comment "### QA (clara) runs tests."
 ./test.sh
-bash ./bar.sh > result.out && fgrep -q "./bar.sh $task" result.out
+bash ./foo.sh arg > result.out && fgrep -q "./foo.sh $task" result.out
 
 comment "### QA (clara) marks task approved, tags task candidate."
 task ${task} approved
@@ -492,6 +391,176 @@ git merge ${rel}c1
 git commit -m "${rel}: Release Candidate ${rel}c1 as ${rel}p1." -a || : Fast-forward is OK
 git tag -a -m "${rel}: Release Candidate ${rel}p1." ${rel}p1
 git tag -l
+git branch --color
+git log --color
+git push
+git push --tags
+mail -c "${rel}: Release Candidate ${rel}c1 merged to master and tagged ${rel}p1" release@$site production@$site
+logout
+
+###################################################################
+
+_set_task $task_2
+comment "### Dev ($dev) alters tests before changing code to Task $task spec."
+ssh $dev@$dev.dev
+cd $user_dir/$dev/$app
+vi test.sh <<EOF
+#!/bin/bash
+PS4="\$0: "
+trap ': exit \$?: \$BASH_COMMAND' EXIT
+set -xe
+./foo.sh param > result.out
+fgrep -q './foo.sh std' result.out
+./bar.sh param > result.out
+fgrep -q './bar.sh $task param' result.out
+rm result.out
+: OK
+EOF
+git diff --color test.sh
+./test.sh || comment "Expected test failure: exit $?"
+git commit -m "Test for parameter feature" -a
+
+comment "### Dev ($dev) attempts to change code according to spec (TYPO)."
+vi bar.sh <<EOF
+#!/bin/bash
+echo "\$0 $task TYPO \$1"
+EOF
+git commit -m "Added parameter feature." -a
+./test.sh || comment "Unexpected test failure: exit $?"
+
+comment "### Dev ($dev) fixes code to task spec."
+vi bar.sh <<EOF
+#!/bin/bash
+echo "\$0 $task \$1"
+EOF
+git diff --color bar.sh
+./test.sh && comment "Test passes: exit $?"
+git branch --color
+git commit -m "Fixed typo." -a
+
+comment "### Dev ($dev) rebases branch from main repo master."
+git checkout master
+git pull $main master
+git checkout $task
+git merge master || comment '! Merge failed'
+
+comment "### Dev ($dev) resolves merge."
+vi test.sh <<EOF
+#!/bin/bash
+PS4="\$0: "
+trap ': exit \$?: \$BASH_COMMAND' EXIT
+set -xe
+./foo.sh param > result.out
+fgrep -q './foo.sh $task_1' result.out
+./bar.sh param > result.out
+fgrep -q './bar.sh $task_2 param' result.out
+rm result.out
+: OK
+EOF
+git diff --color test.sh
+
+comment "### Dev ($dev) checks tests again."
+./test.sh || comment "Unexpected test failure: exit $?"
+
+comment "### Dev ($dev) commits merge."
+git add test.sh
+git commit -m "Merged test.sh" -a
+
+# git log -p
+comment "### Dev ($dev) pushes working task branch to personal git.$site repo."
+git push origin $task
+
+###################################################################
+
+comment "## Dev ($dev) prepares task candidate ${task}c1 for QA and release."
+git checkout master
+git pull origin master
+git branch ${task}c1
+
+comment "### Dev ($dev) merges task work into task candidate branch."
+git checkout ${task}c1
+git merge --squash ${task}
+git commit -m "${task}: bar.sh: output $task with argument." -a
+git log
+git push origin ${task}c1
+
+comment "### Dev ($dev) marks task completed."
+task $task completed
+mail -s "${task}: Task candidate ${task}c1 completed and ready for QA." qa@$site
+logout
+
+###################################################################
+
+comment "## QA (clara) tests task candidate ${task}c1."
+ssh clara@clara.qa
+mkdir -p $task_dir/${task}c1
+cd $task_dir/${task}c1
+git clone $gh/$dev/$app
+cd $app
+comment "### QA checkout ${task}c1."
+git checkout ${task}c1
+git branch --color
+comment "### QA (clara) runs tests."
+./test.sh
+bash ./foo.sh arg > result.out && fgrep -q "./foo.sh $task_1" result.out
+bash ./bar.sh arg > result.out && fgrep -q "./bar.sh $task_2 arg" result.out
+
+comment "### QA (clara) marks task approved, tags task candidate."
+task ${task} approved
+git tag -a -m "${task}: $user approved ${task}c1 as ${task}a1." ${task}a1
+git tag -l
+git push --tags
+mail -s '${task}: $user approved ${task}c1 as ${rel}a1.' $dev@$site rel@$site
+logout
+
+###################################################################
+
+comment "## RelEng (dave) rebases Release ${rel} branch."
+ssh dave@dave.dev
+cd $rel_dir/$rel/$app
+git checkout master
+git pull origin master
+git checkout $rel
+git merge master
+
+comment "## RelEng (dave) merges approved Task ${task} into Release ${rel} branch."
+git remote add -f $dev $gh/$dev/$app
+git checkout $rel
+git merge ${task}a1
+git commit -m "${rel}: ${task}" -a || : Fast-forward is OK
+git push origin $rel
+logout
+
+###################################################################
+
+comment "## Integration Test of Release Candidate (RC)."
+ssh $prod_user@$main.qa
+mkdir -p $rel_dir/$rel
+cd $rel_dir/$rel
+git clone $gh/$main/$app
+cd $app
+git pull
+git checkout ${rel}
+./test.sh
+git tag -a -m "${rel}: Release Candidate ${rel}c1." ${rel}c1
+git tag -l
+git push
+git push --tags
+mail -c "${rel}: Release Candiate ${rel}c1 tagged." release@$site
+logout
+
+comment "## RelEng (dave) merges RC into main head and tags it."
+ssh dave@dave.dev
+cd $rel_dir/$rel/$app
+comment "### RelEng (dave) updates from master."
+git fetch
+git checkout master
+git pull origin master
+comment "### RelEng (dave) merges rel candiate ${rel}c1 and tags it into $main master."
+git merge ${rel}c1
+git commit -m "${rel}: Release Candidate ${rel}c1 as ${rel}p1." -a || : Fast-forward is OK
+git tag -a -m "${rel}: Release Candidate ${rel}p1." ${rel}p1
+git tag -l
 git push --tags origin
 mail -c "${rel}: Release Candidate ${rel}c1 merged to master and tagged ${rel}p1" release@$site production@$site
 logout
@@ -502,10 +571,10 @@ comment "## Ops deploys ${rel}p1 tag."
 ssh $prod_user@$stage.prod
 cd $prod_dir/$app
 
-git checkout master
-./test.sh
-bash ./foo.sh option > result.out; fgrep -q './foo.sh std' result.out
-git log
+#git checkout master
+#git pull
+#./test.sh
+#git log
 
 comment "### Ops pulls new tags and checkout ${rel}p1."
 git tag -l
@@ -517,7 +586,8 @@ git log
 
 comment "### Ops runs sanity check."
 ./test.sh
-bash ./foo.sh option > result.out; fgrep -q "./foo.sh $task_1" result.out
+./foo.sh option > result.out; fgrep -q "./foo.sh ${task_1}" result.out
+./bar.sh option > result.out; fgrep -q "./bar.sh ${task_2} option" result.out
 
 comment "### Ops pushes ${rel}p1 tag."
 rake push tag="${rel}p1"
