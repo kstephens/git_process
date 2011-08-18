@@ -143,6 +143,9 @@ task() {
 #
 
 set -e
+mkdir -p /tmp/git_process
+cd /tmp/git_process
+
 # trap '{ set +x; } >/dev/null 2>&1; echo "$0: exit $?: $BASH_COMMAND"' EXIT
 
 rm -rf gh host
@@ -220,6 +223,8 @@ git checkout master
 rake push
 logout
 
+###################################################################
+
 comment "## Devs (alice, bob, dave) clone their git.$site repos to local machines."
 for user in alice bob dave
 do
@@ -232,6 +237,9 @@ do
   logout
 done
 
+###################################################################
+
+comment "# Create release branches."
 for rel in $rels
 do 
 comment "## RelEng (dave) creates release branch $rel in $gh/$main/$app."
@@ -246,6 +254,9 @@ git push origin $rel
 logout
 done
 
+###################################################################
+
+comment "# Assign tasks to developers."
 for t in $task_1 $task_2
 do
 _set_task $t
@@ -265,6 +276,8 @@ comment "### Dev ($dev) checks for working tests before changes."
 logout
 
 done
+
+###################################################################
 
 _set_task $task_1
 comment "### Dev ($dev) alters tests before changing code to Task $task spec."
@@ -293,8 +306,10 @@ echo "\$0 $task"
 EOF
 ./test.sh && comment "Test passes: exit $?"
 git commit -m "Added $task feature." -a
-
 logout
+
+###################################################################
+
 _set_task $task_1
 comment "## Dev ($dev) prepares task candidate for QA and release."
 ssh $dev@$dev.dev
@@ -305,15 +320,19 @@ git checkout master
 git pull origin master
 git branch ${task}c1
 git checkout ${task}c1
+
 comment "### Dev ($dev) merges task work into task candidate branch."
 git merge --squash ${task}
 git commit -m "${task}: foo.sh: output $task." -a
 git log
 git push origin ${task}c1
+
 comment "### Dev ($dev) marks task completed."
 task $task completed
 mail -s "${task}: Task candidate ${task}c1 completed and ready for QA." qa@$site
 logout
+
+###################################################################
 
 comment "## QA (clara) tests task candidate ${task}c1."
 ssh clara@clara.qa
@@ -321,23 +340,25 @@ mkdir -p $task_dir/${task}c1
 cd $task_dir/${task}c1
 git clone $gh/$dev/$app
 cd $app
+
 comment "### QA checkout ${task}c1."
 git checkout ${task}c1
 git branch --color
-comment "### QA (clara) runs tests."
+comment "### QA (clara) runs tests for Task ${task}."
 ./test.sh
 bash ./foo.sh > result.out && fgrep -q "./foo.sh $task" result.out
 
-comment "### QA (clara) marks task approved, tags task candidate."
-task 1234 approved
+comment "### QA (clara) marks Task ${task} approved, tags task candidate."
+task $task approved
 git tag -a -m "${task}: $user approved ${task}c1 as ${task}a1." ${task}a1
 git tag -l
 git push --tags
 mail -s '${task}: $user approved ${task}c1 as ${rel}a1.' $dev@$site rel@$site
-
 logout
-_set_task $task_2
 
+###################################################################
+
+_set_task $task_2
 comment "### Dev ($dev) alters tests before changing code to Task $task spec."
 ssh $dev@$dev.dev
 cd $user_dir/$dev/$app
@@ -384,12 +405,18 @@ git merge $main/master
 # git log -p
 comment "### Dev ($dev) pushes working task branch to personal git.$site repo."
 git push origin $task
-
 logout
-_set_task $task_1
+
+###################################################################
+
+_set_task $task_2
 comment "## Dev ($dev) prepares task candidate for QA and release."
 ssh $dev@$dev.dev
 cd $user_dir/$dev/$app
+git checkout master
+git pull origin master
+git branch ${task}c1
+git checkout ${task}c1
 
 comment "### Dev ($dev) merges task work into task candidate branch."
 git merge --squash ${task}
@@ -400,6 +427,8 @@ comment "### Dev ($dev) marks task completed."
 task $task completed
 mail -s "${task}: Task candidate ${task}c1 completed and ready for QA." qa@$site
 logout
+
+###################################################################
 
 comment "## QA (clara) tests task candidate ${task}c1."
 ssh clara@clara.qa
@@ -415,12 +444,14 @@ comment "### QA (clara) runs tests."
 bash ./foo.sh > result.out && fgrep -q "./foo.sh $task" result.out
 
 comment "### QA (clara) marks task approved, tags task candidate."
-task 1234 approved
+task ${task} approved
 git tag -a -m "${task}: $user approved ${task}c1 as ${task}a1." ${task}a1
 git tag -l
 git push --tags
 mail -s '${task}: $user approved ${task}c1 as ${rel}a1.' $dev@$site rel@$site
 logout
+
+###################################################################
 
 comment "## RelEng (dave) merges approved Task ${task} into Release ${rel} branch."
 ssh dave@dave.dev
@@ -431,6 +462,8 @@ git merge ${task}a1
 git commit -m "${rel}: ${task}" -a || : Fast-forward is OK
 git push origin $rel
 logout
+
+###################################################################
 
 comment "## Integration Test of Release Candidate (RC)."
 ssh $prod_user@$main.qa
@@ -462,6 +495,8 @@ git tag -l
 git push --tags origin
 mail -c "${rel}: Release Candidate ${rel}c1 merged to master and tagged ${rel}p1" release@$site production@$site
 logout
+
+###################################################################
 
 comment "## Ops deploys ${rel}p1 tag."
 ssh $prod_user@$stage.prod
