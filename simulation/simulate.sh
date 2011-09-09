@@ -40,6 +40,8 @@ rel_dir=$work_dir/r
 pause=
 #pause=1
 
+tmp_work_dir="/tmp/git_process"
+
 _set_task() {
   { set +x; } 1>/dev/null 2>&1
   echo "..."
@@ -51,15 +53,19 @@ _set_task() {
 # Overrides
 for expr in "$@"; do eval "$expr"; done
 
+set -e
+mkdir -p "$tmp_work_dir"
+tmp_work_dir="$(cd -P "$tmp_work_dir" && /bin/pwd)"
+
 # Rewrite output:
 if [ -z "$_REWRITING_OUTPUT" ]
 then
   # set -x
-  exec 3>&2
+  # exec 3>&2
   "$0" _REWRITING_OUTPUT=1 "$@" 2>&1 | 
   fgrep -v ' _set_task ' |
   sed \
-  -e "s#file:////.*/gh/#git@git.${site}/#g" \
+  -e "s#file://$tmp_work_dir/gh/#git@git.${site}/#g" \
   -e "s#\(comment \)\(.*\)#\\1${_vt_HI}${_vt_UNDER}\\2${_vt_NORM}#"
   exit $?
 fi
@@ -141,10 +147,8 @@ task() {
 ##########################################
 # Pre-conditions
 #
-
 set -e
-mkdir -p /tmp/git_process
-cd /tmp/git_process
+cd "$tmp_work_dir"
 
 # trap '{ set +x; } >/dev/null 2>&1; echo "$0: exit $?: $BASH_COMMAND"' EXIT
 
@@ -152,13 +156,14 @@ rm -rf gh host
 mkdir -p host/{localhost,alice.dev,bob.dev,clara.qa,dave.dev,$main.qa,$stage.prod}
 
 dir="$(cd $(dirname $0) && /bin/pwd)"
-gh="file:///$dir/gh"
+gh="file://$dir/gh"
 
 ssh somebody@localhost
 cd ../..
 
 ######################################################################
 comment "# Setup simulation"
+date 
 
 comment "## Create main app repo on git.$site."
 (
