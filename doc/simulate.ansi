@@ -1,5 +1,7 @@
  [2;31msomebody@localhost >[0m cd ../..
  [2;31msomebody@localhost >[0m comment [1m[4m'# Setup simulation'[0m
+ [2;31msomebody@localhost >[0m date
+Fri Sep  9 17:42:27 CDT 2011
  [2;31msomebody@localhost >[0m comment [1m[4m'## Create main app repo on git.site.com.'[0m
  [2;31msomebody@localhost >[0m mkdir -p gh/main/app
  [2;31msomebody@localhost >[0m cd gh/main/app
@@ -40,7 +42,7 @@ rm result.out
 ./test.sh: : OK
 ./test.sh: : exit 0: : OK
  [2;31msomebody@localhost >[0m git commit -m 'Initial main app.' -a
-[master (root-commit) e927d28] Initial main app.
+[master (root-commit) cb3dc1a] Initial main app.
  3 files changed, 14 insertions(+), 0 deletions(-)
  create mode 100755 bar.sh
  create mode 100755 foo.sh
@@ -251,7 +253,7 @@ rm result.out
 ./test.sh: : exit 1: fgrep -q ''\''./foo.sh' 't1234'\''' result.out
  [2;32malice@alice.dev >[0m comment [1m[4m'Expected test failure: exit 1'[0m
  [2;32malice@alice.dev >[0m git commit -m 'Test for t1234 feature' -a
-[t1234 c76bc61] Test for t1234 feature
+[t1234 9f505ed] Test for t1234 feature
  1 files changed, 1 insertions(+), 1 deletions(-)
  [2;32malice@alice.dev >[0m comment [1m[4m'### Dev (alice) attempts to change code according to Task t1234 spec.'[0m
  [2;32malice@alice.dev >[0m vi foo.sh
@@ -268,7 +270,7 @@ echo "$0 t1234"
 ./test.sh: : exit 0: : OK
  [2;32malice@alice.dev >[0m comment [1m[4m'Test passes: exit 0'[0m
  [2;32malice@alice.dev >[0m git commit -m 'Added t1234 feature.' -a
-[t1234 7894f86] Added t1234 feature.
+[t1234 2d33dd6] Added t1234 feature.
  1 files changed, 1 insertions(+), 1 deletions(-)
  [2;32malice@alice.dev >[0m comment [1m[4m'### Dev (alice) pulls down main master and creates task candidate branch for Task t1234.'[0m
  [2;32malice@alice.dev >[0m git checkout master
@@ -280,25 +282,25 @@ Already up-to-date.
 Switched to branch 't1234c1'
  [2;32malice@alice.dev >[0m comment [1m[4m'### Dev (alice) merges task work into task candidate branch.'[0m
  [2;32malice@alice.dev >[0m git merge --squash t1234
-Updating e927d28..7894f86
+Updating cb3dc1a..2d33dd6
 Fast-forward
 Squash commit -- not updating HEAD
  foo.sh  |    2 +-
  test.sh |    2 +-
  2 files changed, 2 insertions(+), 2 deletions(-)
  [2;32malice@alice.dev >[0m git commit -m 't1234: foo.sh: output t1234.' -a
-[t1234c1 8c14bbf] t1234: foo.sh: output t1234.
+[t1234c1 d871f69] t1234: foo.sh: output t1234.
  2 files changed, 2 insertions(+), 2 deletions(-)
  [2;32malice@alice.dev >[0m git log
-commit 8c14bbf0d962d4f1239ef1052da10ec5bccf58fa
+commit d871f69255be774015a5c56a8dad5015fca1fcd0
 Author: alice <alice@site.com>
-Date:   Fri Sep 9 16:50:10 2011 -0500
+Date:   Fri Sep 9 17:42:28 2011 -0500
 
     t1234: foo.sh: output t1234.
 
-commit e927d28f90fa01bbb2797836247a49f413fb622e
+commit cb3dc1a487adfae0c2acdd3e8f2364424c977c05
 Author: somebody <somebody@site.com>
-Date:   Fri Sep 9 16:50:09 2011 -0500
+Date:   Fri Sep 9 17:42:27 2011 -0500
 
     Initial main app.
  [2;32malice@alice.dev >[0m git push origin t1234c1
@@ -363,7 +365,7 @@ From git@git.site.com/alice/app
  [2;35mdave@dave.dev >[0m git checkout r20110420
 Already on 'r20110420'
  [2;35mdave@dave.dev >[0m git merge t1234a1
-Updating e927d28..8c14bbf
+Updating cb3dc1a..d871f69
 Fast-forward
  foo.sh  |    2 +-
  test.sh |    2 +-
@@ -374,7 +376,7 @@ nothing to commit (working directory clean)
  [2;35mdave@dave.dev >[0m : Fast-forward is OK
  [2;35mdave@dave.dev >[0m git push origin r20110420
 To git@git.site.com/main/app
-   e927d28..8c14bbf  r20110420 -> r20110420
+   cb3dc1a..d871f69  r20110420 -> r20110420
  [2;35mdave@dave.dev >[0m logout
 LOGGED OUT
 
@@ -423,7 +425,7 @@ Switched to branch 'master'
 Already up-to-date.
  [2;35mdave@dave.dev >[0m comment [1m[4m'### RelEng (dave) merges rel candiate r20110420c1 and tags it into main master.'[0m
  [2;35mdave@dave.dev >[0m git merge r20110420c1
-Updating e927d28..8c14bbf
+Updating cb3dc1a..d871f69
 Fast-forward
  foo.sh  |    2 +-
  test.sh |    2 +-
@@ -459,20 +461,20 @@ t1234a1
 * [32mmaster[m
   r20110420[m
  [2;35mdave@dave.dev >[0m git log --color
-[33mcommit 8c14bbf0d962d4f1239ef1052da10ec5bccf58fa[m
+[33mcommit d871f69255be774015a5c56a8dad5015fca1fcd0[m
 Author: alice <alice@site.com>
-Date:   Fri Sep 9 16:50:10 2011 -0500
+Date:   Fri Sep 9 17:42:28 2011 -0500
 
     t1234: foo.sh: output t1234.
 
-[33mcommit e927d28f90fa01bbb2797836247a49f413fb622e[m
+[33mcommit cb3dc1a487adfae0c2acdd3e8f2364424c977c05[m
 Author: somebody <somebody@site.com>
-Date:   Fri Sep 9 16:50:09 2011 -0500
+Date:   Fri Sep 9 17:42:27 2011 -0500
 
     Initial main app.
  [2;35mdave@dave.dev >[0m git push
 To git@git.site.com/main/app
-   e927d28..8c14bbf  master -> master
+   cb3dc1a..d871f69  master -> master
  [2;35mdave@dave.dev >[0m git push --tags
 To git@git.site.com/main/app
  * [new tag]         r20110420p1 -> r20110420p1
@@ -525,7 +527,7 @@ rm result.out
 ./test.sh: : exit 1: fgrep -q ''\''./bar.sh' t5678 'param'\''' result.out
  [2;33mbob@bob.dev >[0m comment [1m[4m'Expected test failure: exit 1'[0m
  [2;33mbob@bob.dev >[0m git commit -m 'Test for parameter feature' -a
-[t5678 6c1f428] Test for parameter feature
+[t5678 4e18a94] Test for parameter feature
  1 files changed, 3 insertions(+), 3 deletions(-)
  [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) attempts to change code according to spec (TYPO).'[0m
  [2;33mbob@bob.dev >[0m vi bar.sh
@@ -533,7 +535,7 @@ rm result.out
 #!/bin/bash
 echo "$0 t5678 TYPO $1"
  [2;33mbob@bob.dev >[0m git commit -m 'Added parameter feature.' -a
-[t5678 3aafe69] Added parameter feature.
+[t5678 4cb3672] Added parameter feature.
  1 files changed, 1 insertions(+), 1 deletions(-)
  [2;33mbob@bob.dev >[0m ./test.sh
 ./test.sh: ./foo.sh param
@@ -569,7 +571,7 @@ echo "$0 t5678 $1"
   master[m
 * [32mt5678[m
  [2;33mbob@bob.dev >[0m git commit -m 'Fixed typo.' -a
-[t5678 707055f] Fixed typo.
+[t5678 b8fee6e] Fixed typo.
  1 files changed, 1 insertions(+), 1 deletions(-)
  [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) rebases branch from main repo master.'[0m
  [2;33mbob@bob.dev >[0m git checkout master
@@ -577,7 +579,7 @@ Switched to branch 'master'
  [2;33mbob@bob.dev >[0m git pull main master
 From git@git.site.com/main/app
  * branch            master     -> FETCH_HEAD
-Updating e927d28..8c14bbf
+Updating cb3dc1a..d871f69
 Fast-forward
  foo.sh  |    2 +-
  test.sh |    2 +-
@@ -633,7 +635,7 @@ rm result.out
  [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) commits merge.'[0m
  [2;33mbob@bob.dev >[0m git add test.sh
  [2;33mbob@bob.dev >[0m git commit -m 'Merged test.sh' -a
-[t5678 ac57566] Merged test.sh
+[t5678 1df02be] Merged test.sh
  [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) pushes working task branch to personal git.site.com repo.'[0m
  [2;33mbob@bob.dev >[0m git push origin t5678
 To git@git.site.com/bob/app
@@ -651,31 +653,31 @@ Already up-to-date.
  [2;33mbob@bob.dev >[0m git checkout t5678c1
 Switched to branch 't5678c1'
  [2;33mbob@bob.dev >[0m git merge --squash t5678
-Updating 8c14bbf..ac57566
+Updating d871f69..1df02be
 Fast-forward
 Squash commit -- not updating HEAD
  bar.sh  |    2 +-
  test.sh |    6 +++---
  2 files changed, 4 insertions(+), 4 deletions(-)
  [2;33mbob@bob.dev >[0m git commit -m 't5678: bar.sh: output t5678 with argument.' -a
-[t5678c1 e29cd7e] t5678: bar.sh: output t5678 with argument.
+[t5678c1 f5ccad1] t5678: bar.sh: output t5678 with argument.
  2 files changed, 4 insertions(+), 4 deletions(-)
  [2;33mbob@bob.dev >[0m git log
-commit e29cd7ef797096971008458dfdff8937c05b96f6
+commit f5ccad12346c0144dc0a31137cfd4ec6f00b384c
 Author: bob <bob@site.com>
-Date:   Fri Sep 9 16:50:13 2011 -0500
+Date:   Fri Sep 9 17:42:31 2011 -0500
 
     t5678: bar.sh: output t5678 with argument.
 
-commit 8c14bbf0d962d4f1239ef1052da10ec5bccf58fa
+commit d871f69255be774015a5c56a8dad5015fca1fcd0
 Author: alice <alice@site.com>
-Date:   Fri Sep 9 16:50:10 2011 -0500
+Date:   Fri Sep 9 17:42:28 2011 -0500
 
     t1234: foo.sh: output t1234.
 
-commit e927d28f90fa01bbb2797836247a49f413fb622e
+commit cb3dc1a487adfae0c2acdd3e8f2364424c977c05
 Author: somebody <somebody@site.com>
-Date:   Fri Sep 9 16:50:09 2011 -0500
+Date:   Fri Sep 9 17:42:27 2011 -0500
 
     Initial main app.
  [2;33mbob@bob.dev >[0m git push origin t5678c1
@@ -737,12 +739,12 @@ LOGGED OUT
 Switched to branch 'master'
  [2;35mdave@dave.dev >[0m git pull
 From git@git.site.com/main/app
-   e927d28..8c14bbf  master     -> origin/master
-   e927d28..8c14bbf  r20110420  -> origin/r20110420
+   cb3dc1a..d871f69  master     -> origin/master
+   cb3dc1a..d871f69  r20110420  -> origin/r20110420
  * [new tag]         r20110420c1 -> r20110420c1
  * [new tag]         r20110420p1 -> r20110420p1
  * [new tag]         t1234a1    -> t1234a1
-Updating e927d28..8c14bbf
+Updating cb3dc1a..d871f69
 Fast-forward
  foo.sh  |    2 +-
  test.sh |    2 +-
@@ -750,7 +752,7 @@ Fast-forward
  [2;35mdave@dave.dev >[0m git checkout r20110427
 Switched to branch 'r20110427'
  [2;35mdave@dave.dev >[0m git merge master
-Updating e927d28..8c14bbf
+Updating cb3dc1a..d871f69
 Fast-forward
  foo.sh  |    2 +-
  test.sh |    2 +-
@@ -766,7 +768,7 @@ From git@git.site.com/bob/app
  [2;35mdave@dave.dev >[0m git checkout r20110427
 Already on 'r20110427'
  [2;35mdave@dave.dev >[0m git merge t5678a1
-Updating 8c14bbf..e29cd7e
+Updating d871f69..f5ccad1
 Fast-forward
  bar.sh  |    2 +-
  test.sh |    6 +++---
@@ -777,7 +779,7 @@ nothing to commit (working directory clean)
  [2;35mdave@dave.dev >[0m : Fast-forward is OK
  [2;35mdave@dave.dev >[0m git push origin r20110427
 To git@git.site.com/main/app
-   e927d28..e29cd7e  r20110427 -> r20110427
+   cb3dc1a..f5ccad1  r20110427 -> r20110427
  [2;35mdave@dave.dev >[0m logout
 LOGGED OUT
 
@@ -830,7 +832,7 @@ Switched to branch 'master'
 Already up-to-date.
  [2;35mdave@dave.dev >[0m comment [1m[4m'### RelEng (dave) merges rel candiate r20110427c1 and tags it into main master.'[0m
  [2;35mdave@dave.dev >[0m git merge r20110427c1
-Updating 8c14bbf..e29cd7e
+Updating d871f69..f5ccad1
 Fast-forward
  bar.sh  |    2 +-
  test.sh |    6 +++---
@@ -865,7 +867,7 @@ LOGGED OUT
  [2;36mprod@stage.prod >[0m git tag -l
  [2;36mprod@stage.prod >[0m git fetch
 From git@git.site.com/main/app
-   e927d28..8c14bbf  master     -> origin/master
+   cb3dc1a..d871f69  master     -> origin/master
  * [new branch]      r20110420  -> origin/r20110420
  * [new branch]      r20110427  -> origin/r20110427
  * [new tag]         r20110420c1 -> r20110420c1
@@ -884,21 +886,21 @@ t5678a1
  [2;36mprod@stage.prod >[0m git checkout r20110427p1
  [2;36mprod@stage.prod >[0m fgrep -q 'You are in '\''detached HEAD'\'' state.' result.out
  [2;36mprod@stage.prod >[0m git log
-commit e29cd7ef797096971008458dfdff8937c05b96f6
+commit f5ccad12346c0144dc0a31137cfd4ec6f00b384c
 Author: bob <bob@site.com>
-Date:   Fri Sep 9 16:50:13 2011 -0500
+Date:   Fri Sep 9 17:42:31 2011 -0500
 
     t5678: bar.sh: output t5678 with argument.
 
-commit 8c14bbf0d962d4f1239ef1052da10ec5bccf58fa
+commit d871f69255be774015a5c56a8dad5015fca1fcd0
 Author: alice <alice@site.com>
-Date:   Fri Sep 9 16:50:10 2011 -0500
+Date:   Fri Sep 9 17:42:28 2011 -0500
 
     t1234: foo.sh: output t1234.
 
-commit e927d28f90fa01bbb2797836247a49f413fb622e
+commit cb3dc1a487adfae0c2acdd3e8f2364424c977c05
 Author: somebody <somebody@site.com>
-Date:   Fri Sep 9 16:50:09 2011 -0500
+Date:   Fri Sep 9 17:42:27 2011 -0500
 
     Initial main app.
  [2;36mprod@stage.prod >[0m comment [1m[4m'### Ops runs sanity check.'[0m
