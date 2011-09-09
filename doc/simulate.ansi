@@ -1,0 +1,925 @@
+ [2;31msomebody@localhost >[0m cd ../..
+ [2;31msomebody@localhost >[0m comment [1m[4m'# Setup simulation'[0m
+ [2;31msomebody@localhost >[0m comment [1m[4m'## Create main app repo on git.site.com.'[0m
+ [2;31msomebody@localhost >[0m mkdir -p gh/main/app
+ [2;31msomebody@localhost >[0m cd gh/main/app
+ [2;31msomebody@localhost >[0m git init
+Initialized empty Git repository in /private/tmp/git_process/gh/main/app/.git/
+ [2;31msomebody@localhost >[0m vi foo.sh
+ [2;31msomebody@localhost >[0m cat foo.sh
+#!/bin/bash
+echo "$0 std"
+ [2;31msomebody@localhost >[0m chmod +x foo.sh
+ [2;31msomebody@localhost >[0m git add foo.sh
+ [2;31msomebody@localhost >[0m vi bar.sh
+ [2;31msomebody@localhost >[0m cat bar.sh
+#!/bin/bash
+echo "$0 std"
+ [2;31msomebody@localhost >[0m chmod +x bar.sh
+ [2;31msomebody@localhost >[0m git add bar.sh
+ [2;31msomebody@localhost >[0m vi test.sh
+ [2;31msomebody@localhost >[0m cat test.sh
+#!/bin/bash
+PS4="$0: "
+trap ': exit $?: $BASH_COMMAND' EXIT
+set -xe
+./foo.sh > result.out
+fgrep -q './foo.sh std' result.out
+./bar.sh > result.out
+fgrep -q './bar.sh std' result.out
+rm result.out
+: OK
+ [2;31msomebody@localhost >[0m chmod +x test.sh
+ [2;31msomebody@localhost >[0m git add test.sh
+ [2;31msomebody@localhost >[0m ./test.sh
+./test.sh: ./foo.sh
+./test.sh: fgrep -q './foo.sh std' result.out
+./test.sh: ./bar.sh
+./test.sh: fgrep -q './bar.sh std' result.out
+./test.sh: rm result.out
+./test.sh: : OK
+./test.sh: : exit 0: : OK
+ [2;31msomebody@localhost >[0m git commit -m 'Initial main app.' -a
+[master (root-commit) e927d28] Initial main app.
+ 3 files changed, 14 insertions(+), 0 deletions(-)
+ create mode 100755 bar.sh
+ create mode 100755 foo.sh
+ create mode 100755 test.sh
+ [2;31msomebody@localhost >[0m git config --bool core.bare true
+ [2;31msomebody@localhost >[0m comment [1m[4m'## Devs (alice, bob, dave) clone main repo on git.site.com.'[0m
+ [2;31msomebody@localhost >[0m for user in alice bob dave
+ [2;31msomebody@localhost >[0m mkdir -p gh/alice
+ [2;31msomebody@localhost >[0m cd gh/alice
+ [2;31msomebody@localhost >[0m git clone git@git.site.com/main/app
+Cloning into app...
+ [2;31msomebody@localhost >[0m cd app
+ [2;31msomebody@localhost >[0m git config --bool core.bare true
+ [2;31msomebody@localhost >[0m for user in alice bob dave
+ [2;31msomebody@localhost >[0m mkdir -p gh/bob
+ [2;31msomebody@localhost >[0m cd gh/bob
+ [2;31msomebody@localhost >[0m git clone git@git.site.com/main/app
+Cloning into app...
+ [2;31msomebody@localhost >[0m cd app
+ [2;31msomebody@localhost >[0m git config --bool core.bare true
+ [2;31msomebody@localhost >[0m for user in alice bob dave
+ [2;31msomebody@localhost >[0m mkdir -p gh/dave
+ [2;31msomebody@localhost >[0m cd gh/dave
+ [2;31msomebody@localhost >[0m git clone git@git.site.com/main/app
+Cloning into app...
+ [2;31msomebody@localhost >[0m cd app
+ [2;31msomebody@localhost >[0m git config --bool core.bare true
+ [2;31msomebody@localhost >[0m comment [1m[4m'# Run Simulation'[0m
+ [2;31msomebody@localhost >[0m comment [1m[4m'## Initial production deployment.'[0m
+ [2;31msomebody@localhost >[0m ssh prod@stage.prod
+ [2;36mprod@stage.prod >[0m mkdir -p export/web
+ [2;36mprod@stage.prod >[0m cd export/web
+ [2;36mprod@stage.prod >[0m git clone git@git.site.com/main/app
+Cloning into app...
+ [2;36mprod@stage.prod >[0m cd app
+ [2;36mprod@stage.prod >[0m git checkout master
+Already on 'master'
+ [2;36mprod@stage.prod >[0m rake push
+ [2;36mprod@stage.prod >[0m : ...
+ [2;36mprod@stage.prod >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m'## Devs (alice, bob, dave) clone their git.site.com repos to local machines.'[0m
+ [2;31m>[0m for user in alice bob dave
+ [2;31m>[0m ssh alice@alice.dev
+ [2;32malice@alice.dev >[0m mkdir -p export/u/alice
+ [2;32malice@alice.dev >[0m cd export/u/alice
+ [2;32malice@alice.dev >[0m git clone git@git.site.com/alice/app
+Cloning into app...
+ [2;32malice@alice.dev >[0m cd app
+ [2;32malice@alice.dev >[0m git remote add -f main git@git.site.com/main/app
+Updating main
+From git@git.site.com/main/app
+ * [new branch]      master     -> main/master
+ [2;32malice@alice.dev >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m for user in alice bob dave
+ [2;31m>[0m ssh bob@bob.dev
+ [2;33mbob@bob.dev >[0m mkdir -p export/u/bob
+ [2;33mbob@bob.dev >[0m cd export/u/bob
+ [2;33mbob@bob.dev >[0m git clone git@git.site.com/bob/app
+Cloning into app...
+ [2;33mbob@bob.dev >[0m cd app
+ [2;33mbob@bob.dev >[0m git remote add -f main git@git.site.com/main/app
+Updating main
+From git@git.site.com/main/app
+ * [new branch]      master     -> main/master
+ [2;33mbob@bob.dev >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m for user in alice bob dave
+ [2;31m>[0m ssh dave@dave.dev
+ [2;35mdave@dave.dev >[0m mkdir -p export/u/dave
+ [2;35mdave@dave.dev >[0m cd export/u/dave
+ [2;35mdave@dave.dev >[0m git clone git@git.site.com/dave/app
+Cloning into app...
+ [2;35mdave@dave.dev >[0m cd app
+ [2;35mdave@dave.dev >[0m git remote add -f main git@git.site.com/main/app
+Updating main
+From git@git.site.com/main/app
+ * [new branch]      master     -> main/master
+ [2;35mdave@dave.dev >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m'# Create release branches.'[0m
+ [2;31m>[0m for rel in '$rels'
+ [2;31m>[0m comment [1m[4m'## RelEng (dave) creates release branch r20110420 in git@git.site.com/main/app.'[0m
+ [2;31m>[0m ssh dave@dave.dev
+ [2;35mdave@dave.dev >[0m mkdir -p export/r/r20110420
+ [2;35mdave@dave.dev >[0m cd export/r/r20110420
+ [2;35mdave@dave.dev >[0m git clone git@git.site.com/main/app
+Cloning into app...
+ [2;35mdave@dave.dev >[0m cd app
+ [2;35mdave@dave.dev >[0m git branch r20110420
+ [2;35mdave@dave.dev >[0m git checkout r20110420
+Switched to branch 'r20110420'
+ [2;35mdave@dave.dev >[0m git push origin r20110420
+To git@git.site.com/main/app
+ * [new branch]      r20110420 -> r20110420
+ [2;35mdave@dave.dev >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m for rel in '$rels'
+ [2;31m>[0m comment [1m[4m'## RelEng (dave) creates release branch r20110427 in git@git.site.com/main/app.'[0m
+ [2;31m>[0m ssh dave@dave.dev
+ [2;35mdave@dave.dev >[0m mkdir -p export/r/r20110427
+ [2;35mdave@dave.dev >[0m cd export/r/r20110427
+ [2;35mdave@dave.dev >[0m git clone git@git.site.com/main/app
+Cloning into app...
+ [2;35mdave@dave.dev >[0m cd app
+ [2;35mdave@dave.dev >[0m git branch r20110427
+ [2;35mdave@dave.dev >[0m git checkout r20110427
+Switched to branch 'r20110427'
+ [2;35mdave@dave.dev >[0m git push origin r20110427
+To git@git.site.com/main/app
+ * [new branch]      r20110427 -> r20110427
+ [2;35mdave@dave.dev >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m'# Assign tasks to developers.'[0m
+ [2;31m>[0m for t in '$task_1' '$task_2'
+...
+ [2;31m>[0m ssh alice@alice.dev
+ [2;32malice@alice.dev >[0m cd export/u/alice/app
+ [2;32malice@alice.dev >[0m comment [1m[4m'### Dev (alice) creates task branch t1234.'[0m
+ [2;32malice@alice.dev >[0m git checkout master
+Already on 'master'
+ [2;32malice@alice.dev >[0m git pull
+Already up-to-date.
+ [2;32malice@alice.dev >[0m git branch t1234
+ [2;32malice@alice.dev >[0m git checkout t1234
+Switched to branch 't1234'
+ [2;32malice@alice.dev >[0m git branch --color
+  master[m
+* [32mt1234[m
+ [2;32malice@alice.dev >[0m comment [1m[4m'### Dev (alice) checks for working tests before changes.'[0m
+ [2;32malice@alice.dev >[0m ./test.sh
+./test.sh: ./foo.sh
+./test.sh: fgrep -q './foo.sh std' result.out
+./test.sh: ./bar.sh
+./test.sh: fgrep -q './bar.sh std' result.out
+./test.sh: rm result.out
+./test.sh: : OK
+./test.sh: : exit 0: : OK
+ [2;32malice@alice.dev >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m for t in '$task_1' '$task_2'
+...
+ [2;31m>[0m ssh bob@bob.dev
+ [2;33mbob@bob.dev >[0m cd export/u/bob/app
+ [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) creates task branch t5678.'[0m
+ [2;33mbob@bob.dev >[0m git checkout master
+Already on 'master'
+ [2;33mbob@bob.dev >[0m git pull
+Already up-to-date.
+ [2;33mbob@bob.dev >[0m git branch t5678
+ [2;33mbob@bob.dev >[0m git checkout t5678
+Switched to branch 't5678'
+ [2;33mbob@bob.dev >[0m git branch --color
+  master[m
+* [32mt5678[m
+ [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) checks for working tests before changes.'[0m
+ [2;33mbob@bob.dev >[0m ./test.sh
+./test.sh: ./foo.sh
+./test.sh: fgrep -q './foo.sh std' result.out
+./test.sh: ./bar.sh
+./test.sh: fgrep -q './bar.sh std' result.out
+./test.sh: rm result.out
+./test.sh: : OK
+./test.sh: : exit 0: : OK
+ [2;33mbob@bob.dev >[0m logout
+LOGGED OUT
+
+...
+ [2;31m>[0m ssh alice@alice.dev
+ [2;32malice@alice.dev >[0m cd export/u/alice/app
+ [2;32malice@alice.dev >[0m vi test.sh
+ [2;32malice@alice.dev >[0m cat test.sh
+#!/bin/bash
+PS4="$0: "
+trap ': exit $?: $BASH_COMMAND' EXIT
+set -xe
+./foo.sh > result.out
+fgrep -q './foo.sh t1234' result.out
+./bar.sh > result.out
+fgrep -q './bar.sh std' result.out
+rm result.out
+: OK
+ [2;32malice@alice.dev >[0m git diff --color test.sh
+[1mdiff --git a/test.sh b/test.sh[m
+[1mindex 8182e10..227055a 100755[m
+[1m--- a/test.sh[m
+[1m+++ b/test.sh[m
+[36m@@ -3,7 +3,7 @@[m [mPS4="$0: "[m
+ trap ': exit $?: $BASH_COMMAND' EXIT[m
+ set -xe[m
+ ./foo.sh > result.out[m
+[31m-fgrep -q './foo.sh std' result.out[m
+[32m+[m[32mfgrep -q './foo.sh t1234' result.out[m
+ ./bar.sh > result.out[m
+ fgrep -q './bar.sh std' result.out[m
+ rm result.out[m
+ [2;32malice@alice.dev >[0m ./test.sh
+./test.sh: ./foo.sh
+./test.sh: fgrep -q './foo.sh t1234' result.out
+./test.sh: : exit 1: fgrep -q ''\''./foo.sh' 't1234'\''' result.out
+ [2;32malice@alice.dev >[0m comment [1m[4m'Expected test failure: exit 1'[0m
+ [2;32malice@alice.dev >[0m git commit -m 'Test for t1234 feature' -a
+[t1234 c76bc61] Test for t1234 feature
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+ [2;32malice@alice.dev >[0m comment [1m[4m'### Dev (alice) attempts to change code according to Task t1234 spec.'[0m
+ [2;32malice@alice.dev >[0m vi foo.sh
+ [2;32malice@alice.dev >[0m cat foo.sh
+#!/bin/bash
+echo "$0 t1234"
+ [2;32malice@alice.dev >[0m ./test.sh
+./test.sh: ./foo.sh
+./test.sh: fgrep -q './foo.sh t1234' result.out
+./test.sh: ./bar.sh
+./test.sh: fgrep -q './bar.sh std' result.out
+./test.sh: rm result.out
+./test.sh: : OK
+./test.sh: : exit 0: : OK
+ [2;32malice@alice.dev >[0m comment [1m[4m'Test passes: exit 0'[0m
+ [2;32malice@alice.dev >[0m git commit -m 'Added t1234 feature.' -a
+[t1234 7894f86] Added t1234 feature.
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+ [2;32malice@alice.dev >[0m comment [1m[4m'### Dev (alice) pulls down main master and creates task candidate branch for Task t1234.'[0m
+ [2;32malice@alice.dev >[0m git checkout master
+Switched to branch 'master'
+ [2;32malice@alice.dev >[0m git pull
+Already up-to-date.
+ [2;32malice@alice.dev >[0m git branch t1234c1
+ [2;32malice@alice.dev >[0m git checkout t1234c1
+Switched to branch 't1234c1'
+ [2;32malice@alice.dev >[0m comment [1m[4m'### Dev (alice) merges task work into task candidate branch.'[0m
+ [2;32malice@alice.dev >[0m git merge --squash t1234
+Updating e927d28..7894f86
+Fast-forward
+Squash commit -- not updating HEAD
+ foo.sh  |    2 +-
+ test.sh |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ [2;32malice@alice.dev >[0m git commit -m 't1234: foo.sh: output t1234.' -a
+[t1234c1 8c14bbf] t1234: foo.sh: output t1234.
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ [2;32malice@alice.dev >[0m git log
+commit 8c14bbf0d962d4f1239ef1052da10ec5bccf58fa
+Author: alice <alice@site.com>
+Date:   Fri Sep 9 16:50:10 2011 -0500
+
+    t1234: foo.sh: output t1234.
+
+commit e927d28f90fa01bbb2797836247a49f413fb622e
+Author: somebody <somebody@site.com>
+Date:   Fri Sep 9 16:50:09 2011 -0500
+
+    Initial main app.
+ [2;32malice@alice.dev >[0m git push origin t1234c1
+To git@git.site.com/alice/app
+ * [new branch]      t1234c1 -> t1234c1
+ [2;32malice@alice.dev >[0m comment [1m[4m'### Dev (alice) marks Task t1234 completed.'[0m
+ [2;32malice@alice.dev >[0m task t1234 completed
+ [2;32malice@alice.dev >[0m : ...
+ [2;32malice@alice.dev >[0m mail -s 't1234: Task candidate t1234c1 completed and ready for QA.' qa@site.com
+ [2;32malice@alice.dev >[0m : ...
+ [2;32malice@alice.dev >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m'## QA (clara) tests task candidate t1234c1.'[0m
+ [2;31m>[0m ssh clara@clara.qa
+ [2;34mclara@clara.qa >[0m mkdir -p export/t/t1234c1
+ [2;34mclara@clara.qa >[0m cd export/t/t1234c1
+ [2;34mclara@clara.qa >[0m git clone git@git.site.com/alice/app
+Cloning into app...
+ [2;34mclara@clara.qa >[0m cd app
+ [2;34mclara@clara.qa >[0m comment [1m[4m'### QA checkout t1234c1.'[0m
+ [2;34mclara@clara.qa >[0m git checkout t1234c1
+Switched to a new branch 't1234c1'
+Branch t1234c1 set up to track remote branch t1234c1 from origin.
+ [2;34mclara@clara.qa >[0m git branch --color
+  master[m
+* [32mt1234c1[m
+ [2;34mclara@clara.qa >[0m comment [1m[4m'### QA (clara) runs tests.'[0m
+ [2;34mclara@clara.qa >[0m ./test.sh
+./test.sh: ./foo.sh
+./test.sh: fgrep -q './foo.sh t1234' result.out
+./test.sh: ./bar.sh
+./test.sh: fgrep -q './bar.sh std' result.out
+./test.sh: rm result.out
+./test.sh: : OK
+./test.sh: : exit 0: : OK
+ [2;34mclara@clara.qa >[0m bash ./foo.sh arg
+ [2;34mclara@clara.qa >[0m fgrep -q './foo.sh t1234' result.out
+ [2;34mclara@clara.qa >[0m comment [1m[4m'### QA (clara) marks task approved, tags task candidate.'[0m
+ [2;34mclara@clara.qa >[0m task t1234 approved
+ [2;34mclara@clara.qa >[0m : ...
+ [2;34mclara@clara.qa >[0m git tag -a -m 't1234: clara approved t1234c1 as t1234a1.' t1234a1
+ [2;34mclara@clara.qa >[0m git tag -l
+t1234a1
+ [2;34mclara@clara.qa >[0m git push --tags
+To git@git.site.com/alice/app
+ * [new tag]         t1234a1 -> t1234a1
+ [2;34mclara@clara.qa >[0m mail -s 't1234: clara approved t1234c1 as r20110420a1.' alice@site.com rel@site.com
+ [2;34mclara@clara.qa >[0m : ...
+ [2;34mclara@clara.qa >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m'## RelEng (dave) merges approved Task t1234 into Release r20110420 branch.'[0m
+ [2;31m>[0m ssh dave@dave.dev
+ [2;35mdave@dave.dev >[0m cd export/r/r20110420/app
+ [2;35mdave@dave.dev >[0m git remote add -f alice git@git.site.com/alice/app
+Updating alice
+From git@git.site.com/alice/app
+ * [new branch]      master     -> alice/master
+ * [new branch]      t1234c1    -> alice/t1234c1
+ * [new tag]         t1234a1    -> t1234a1
+ [2;35mdave@dave.dev >[0m git checkout r20110420
+Already on 'r20110420'
+ [2;35mdave@dave.dev >[0m git merge t1234a1
+Updating e927d28..8c14bbf
+Fast-forward
+ foo.sh  |    2 +-
+ test.sh |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ [2;35mdave@dave.dev >[0m git commit -m 'r20110420: t1234' -a
+# On branch r20110420
+nothing to commit (working directory clean)
+ [2;35mdave@dave.dev >[0m : Fast-forward is OK
+ [2;35mdave@dave.dev >[0m git push origin r20110420
+To git@git.site.com/main/app
+   e927d28..8c14bbf  r20110420 -> r20110420
+ [2;35mdave@dave.dev >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m'## Integration Test of Release Candidate (RC).'[0m
+ [2;31m>[0m ssh prod@main.qa
+ [2;36mprod@main.qa >[0m mkdir -p export/r/r20110420
+ [2;36mprod@main.qa >[0m cd export/r/r20110420
+ [2;36mprod@main.qa >[0m git clone git@git.site.com/main/app
+Cloning into app...
+ [2;36mprod@main.qa >[0m cd app
+ [2;36mprod@main.qa >[0m git pull
+Already up-to-date.
+ [2;36mprod@main.qa >[0m git checkout r20110420
+Switched to a new branch 'r20110420'
+Branch r20110420 set up to track remote branch r20110420 from origin.
+ [2;36mprod@main.qa >[0m ./test.sh
+./test.sh: ./foo.sh
+./test.sh: fgrep -q './foo.sh t1234' result.out
+./test.sh: ./bar.sh
+./test.sh: fgrep -q './bar.sh std' result.out
+./test.sh: rm result.out
+./test.sh: : OK
+./test.sh: : exit 0: : OK
+ [2;36mprod@main.qa >[0m git tag -a -m 'r20110420: Release Candidate r20110420c1.' r20110420c1
+ [2;36mprod@main.qa >[0m git tag -l
+r20110420c1
+ [2;36mprod@main.qa >[0m git push --tags origin
+To git@git.site.com/main/app
+ * [new tag]         r20110420c1 -> r20110420c1
+ [2;36mprod@main.qa >[0m mail -c 'r20110420: Release Candiate r20110420c1 tagged.' release@site.com
+ [2;36mprod@main.qa >[0m : ...
+ [2;36mprod@main.qa >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m'## RelEng (dave) merges RC into main head and tags it.'[0m
+ [2;31m>[0m ssh dave@dave.dev
+ [2;35mdave@dave.dev >[0m cd export/r/r20110420/app
+ [2;35mdave@dave.dev >[0m comment [1m[4m'### RelEng (dave) updates from master.'[0m
+ [2;35mdave@dave.dev >[0m git fetch
+From git@git.site.com/main/app
+ * [new branch]      r20110427  -> origin/r20110427
+ * [new tag]         r20110420c1 -> r20110420c1
+ [2;35mdave@dave.dev >[0m git checkout master
+Switched to branch 'master'
+ [2;35mdave@dave.dev >[0m git pull
+Already up-to-date.
+ [2;35mdave@dave.dev >[0m comment [1m[4m'### RelEng (dave) merges rel candiate r20110420c1 and tags it into main master.'[0m
+ [2;35mdave@dave.dev >[0m git merge r20110420c1
+Updating e927d28..8c14bbf
+Fast-forward
+ foo.sh  |    2 +-
+ test.sh |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ [2;35mdave@dave.dev >[0m ./test.sh
+./test.sh: ./foo.sh
+./test.sh: fgrep -q './foo.sh t1234' result.out
+./test.sh: ./bar.sh
+./test.sh: fgrep -q './bar.sh std' result.out
+./test.sh: rm result.out
+./test.sh: : OK
+./test.sh: : exit 0: : OK
+ [2;35mdave@dave.dev >[0m ./foo.sh option
+ [2;35mdave@dave.dev >[0m fgrep -q './foo.sh t1234' result.out
+ [2;35mdave@dave.dev >[0m ./bar.sh option
+ [2;35mdave@dave.dev >[0m fgrep -q './bar.sh std' result.out
+ [2;35mdave@dave.dev >[0m git commit -m 'r20110420: Release Candidate r20110420c1 as r20110420p1.' -a
+# On branch master
+# Your branch is ahead of 'origin/master' by 1 commit.
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#	result.out
+nothing added to commit but untracked files present (use "git add" to track)
+ [2;35mdave@dave.dev >[0m : Fast-forward is OK
+ [2;35mdave@dave.dev >[0m git tag -a -m 'r20110420: Release Candidate r20110420p1.' r20110420p1
+ [2;35mdave@dave.dev >[0m git tag -l
+r20110420c1
+r20110420p1
+t1234a1
+ [2;35mdave@dave.dev >[0m git branch --color
+* [32mmaster[m
+  r20110420[m
+ [2;35mdave@dave.dev >[0m git log --color
+[33mcommit 8c14bbf0d962d4f1239ef1052da10ec5bccf58fa[m
+Author: alice <alice@site.com>
+Date:   Fri Sep 9 16:50:10 2011 -0500
+
+    t1234: foo.sh: output t1234.
+
+[33mcommit e927d28f90fa01bbb2797836247a49f413fb622e[m
+Author: somebody <somebody@site.com>
+Date:   Fri Sep 9 16:50:09 2011 -0500
+
+    Initial main app.
+ [2;35mdave@dave.dev >[0m git push
+To git@git.site.com/main/app
+   e927d28..8c14bbf  master -> master
+ [2;35mdave@dave.dev >[0m git push --tags
+To git@git.site.com/main/app
+ * [new tag]         r20110420p1 -> r20110420p1
+ * [new tag]         t1234a1 -> t1234a1
+ [2;35mdave@dave.dev >[0m mail -c 'r20110420: Release Candidate r20110420c1 merged to master and tagged r20110420p1' release@site.com production@site.com
+ [2;35mdave@dave.dev >[0m : ...
+ [2;35mdave@dave.dev >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m...[0m
+ [2;31m>[0m comment [1m[4m'# Release r20110420 complete!'[0m
+...
+ [2;31m>[0m ssh bob@bob.dev
+ [2;33mbob@bob.dev >[0m cd export/u/bob/app
+ [2;33mbob@bob.dev >[0m vi test.sh
+ [2;33mbob@bob.dev >[0m cat test.sh
+#!/bin/bash
+PS4="$0: "
+trap ': exit $?: $BASH_COMMAND' EXIT
+set -xe
+./foo.sh param > result.out
+fgrep -q './foo.sh std' result.out
+./bar.sh param > result.out
+fgrep -q './bar.sh t5678 param' result.out
+rm result.out
+: OK
+ [2;33mbob@bob.dev >[0m git diff --color test.sh
+[1mdiff --git a/test.sh b/test.sh[m
+[1mindex 8182e10..1b9aee0 100755[m
+[1m--- a/test.sh[m
+[1m+++ b/test.sh[m
+[36m@@ -2,9 +2,9 @@[m
+ PS4="$0: "[m
+ trap ': exit $?: $BASH_COMMAND' EXIT[m
+ set -xe[m
+[31m-./foo.sh > result.out[m
+[32m+[m[32m./foo.sh param > result.out[m
+ fgrep -q './foo.sh std' result.out[m
+[31m-./bar.sh > result.out[m
+[31m-fgrep -q './bar.sh std' result.out[m
+[32m+[m[32m./bar.sh param > result.out[m
+[32m+[m[32mfgrep -q './bar.sh t5678 param' result.out[m
+ rm result.out[m
+ : OK[m
+ [2;33mbob@bob.dev >[0m ./test.sh
+./test.sh: ./foo.sh param
+./test.sh: fgrep -q './foo.sh std' result.out
+./test.sh: ./bar.sh param
+./test.sh: fgrep -q './bar.sh t5678 param' result.out
+./test.sh: : exit 1: fgrep -q ''\''./bar.sh' t5678 'param'\''' result.out
+ [2;33mbob@bob.dev >[0m comment [1m[4m'Expected test failure: exit 1'[0m
+ [2;33mbob@bob.dev >[0m git commit -m 'Test for parameter feature' -a
+[t5678 6c1f428] Test for parameter feature
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+ [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) attempts to change code according to spec (TYPO).'[0m
+ [2;33mbob@bob.dev >[0m vi bar.sh
+ [2;33mbob@bob.dev >[0m cat bar.sh
+#!/bin/bash
+echo "$0 t5678 TYPO $1"
+ [2;33mbob@bob.dev >[0m git commit -m 'Added parameter feature.' -a
+[t5678 3aafe69] Added parameter feature.
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+ [2;33mbob@bob.dev >[0m ./test.sh
+./test.sh: ./foo.sh param
+./test.sh: fgrep -q './foo.sh std' result.out
+./test.sh: ./bar.sh param
+./test.sh: fgrep -q './bar.sh t5678 param' result.out
+./test.sh: : exit 1: fgrep -q ''\''./bar.sh' t5678 'param'\''' result.out
+ [2;33mbob@bob.dev >[0m comment [1m[4m'Unexpected test failure: exit 1'[0m
+ [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) fixes code to task spec.'[0m
+ [2;33mbob@bob.dev >[0m vi bar.sh
+ [2;33mbob@bob.dev >[0m cat bar.sh
+#!/bin/bash
+echo "$0 t5678 $1"
+ [2;33mbob@bob.dev >[0m git diff --color bar.sh
+[1mdiff --git a/bar.sh b/bar.sh[m
+[1mindex 0b5017b..9868553 100755[m
+[1m--- a/bar.sh[m
+[1m+++ b/bar.sh[m
+[36m@@ -1,2 +1,2 @@[m
+ #!/bin/bash[m
+[31m-echo "$0 t5678 TYPO $1"[m
+[32m+[m[32mecho "$0 t5678 $1"[m
+ [2;33mbob@bob.dev >[0m ./test.sh
+./test.sh: ./foo.sh param
+./test.sh: fgrep -q './foo.sh std' result.out
+./test.sh: ./bar.sh param
+./test.sh: fgrep -q './bar.sh t5678 param' result.out
+./test.sh: rm result.out
+./test.sh: : OK
+./test.sh: : exit 0: : OK
+ [2;33mbob@bob.dev >[0m comment [1m[4m'Test passes: exit 0'[0m
+ [2;33mbob@bob.dev >[0m git branch --color
+  master[m
+* [32mt5678[m
+ [2;33mbob@bob.dev >[0m git commit -m 'Fixed typo.' -a
+[t5678 707055f] Fixed typo.
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+ [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) rebases branch from main repo master.'[0m
+ [2;33mbob@bob.dev >[0m git checkout master
+Switched to branch 'master'
+ [2;33mbob@bob.dev >[0m git pull main master
+From git@git.site.com/main/app
+ * branch            master     -> FETCH_HEAD
+Updating e927d28..8c14bbf
+Fast-forward
+ foo.sh  |    2 +-
+ test.sh |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ [2;33mbob@bob.dev >[0m git checkout t5678
+Switched to branch 't5678'
+ [2;33mbob@bob.dev >[0m git merge master
+Auto-merging test.sh
+CONFLICT (content): Merge conflict in test.sh
+Automatic merge failed; fix conflicts and then commit the result.
+ [2;33mbob@bob.dev >[0m comment [1m[4m'! Merge failed'[0m
+ [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) resolves merge.'[0m
+ [2;33mbob@bob.dev >[0m vi test.sh
+ [2;33mbob@bob.dev >[0m cat test.sh
+#!/bin/bash
+PS4="$0: "
+trap ': exit $?: $BASH_COMMAND' EXIT
+set -xe
+./foo.sh param > result.out
+fgrep -q './foo.sh t1234' result.out
+./bar.sh param > result.out
+fgrep -q './bar.sh t5678 param' result.out
+rm result.out
+: OK
+ [2;33mbob@bob.dev >[0m git diff --color test.sh
+[1mdiff --cc test.sh[m
+[1mindex 1b9aee0,227055a..0000000[m
+[1m--- a/test.sh[m
+[1m+++ b/test.sh[m
+[36m@@@ -2,9 -2,9 +2,9 @@@[m
+  PS4="$0: "[m
+  trap ': exit $?: $BASH_COMMAND' EXIT[m
+  set -xe[m
+[31m -./foo.sh > result.out[m
+[32m +./foo.sh param > result.out[m
+[31m- fgrep -q './foo.sh std' result.out[m
+[32m+ fgrep -q './foo.sh t1234' result.out[m
+[31m -./bar.sh > result.out[m
+[31m -fgrep -q './bar.sh std' result.out[m
+[32m +./bar.sh param > result.out[m
+[32m +fgrep -q './bar.sh t5678 param' result.out[m
+  rm result.out[m
+  : OK[m
+ [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) checks tests again.'[0m
+ [2;33mbob@bob.dev >[0m ./test.sh
+./test.sh: ./foo.sh param
+./test.sh: fgrep -q './foo.sh t1234' result.out
+./test.sh: ./bar.sh param
+./test.sh: fgrep -q './bar.sh t5678 param' result.out
+./test.sh: rm result.out
+./test.sh: : OK
+./test.sh: : exit 0: : OK
+ [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) commits merge.'[0m
+ [2;33mbob@bob.dev >[0m git add test.sh
+ [2;33mbob@bob.dev >[0m git commit -m 'Merged test.sh' -a
+[t5678 ac57566] Merged test.sh
+ [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) pushes working task branch to personal git.site.com repo.'[0m
+ [2;33mbob@bob.dev >[0m git push origin t5678
+To git@git.site.com/bob/app
+ * [new branch]      t5678 -> t5678
+ [2;33mbob@bob.dev >[0m comment [1m[4m'## Dev (bob) prepares task candidate t5678c1 for QA and release.'[0m
+ [2;33mbob@bob.dev >[0m git checkout master
+Switched to branch 'master'
+Your branch is ahead of 'origin/master' by 1 commit.
+ [2;33mbob@bob.dev >[0m git pull main master
+From git@git.site.com/main/app
+ * branch            master     -> FETCH_HEAD
+Already up-to-date.
+ [2;33mbob@bob.dev >[0m git branch t5678c1
+ [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) merges task work into task candidate branch.'[0m
+ [2;33mbob@bob.dev >[0m git checkout t5678c1
+Switched to branch 't5678c1'
+ [2;33mbob@bob.dev >[0m git merge --squash t5678
+Updating 8c14bbf..ac57566
+Fast-forward
+Squash commit -- not updating HEAD
+ bar.sh  |    2 +-
+ test.sh |    6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+ [2;33mbob@bob.dev >[0m git commit -m 't5678: bar.sh: output t5678 with argument.' -a
+[t5678c1 e29cd7e] t5678: bar.sh: output t5678 with argument.
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+ [2;33mbob@bob.dev >[0m git log
+commit e29cd7ef797096971008458dfdff8937c05b96f6
+Author: bob <bob@site.com>
+Date:   Fri Sep 9 16:50:13 2011 -0500
+
+    t5678: bar.sh: output t5678 with argument.
+
+commit 8c14bbf0d962d4f1239ef1052da10ec5bccf58fa
+Author: alice <alice@site.com>
+Date:   Fri Sep 9 16:50:10 2011 -0500
+
+    t1234: foo.sh: output t1234.
+
+commit e927d28f90fa01bbb2797836247a49f413fb622e
+Author: somebody <somebody@site.com>
+Date:   Fri Sep 9 16:50:09 2011 -0500
+
+    Initial main app.
+ [2;33mbob@bob.dev >[0m git push origin t5678c1
+To git@git.site.com/bob/app
+ * [new branch]      t5678c1 -> t5678c1
+ [2;33mbob@bob.dev >[0m comment [1m[4m'### Dev (bob) marks task completed.'[0m
+ [2;33mbob@bob.dev >[0m task t5678 completed
+ [2;33mbob@bob.dev >[0m : ...
+ [2;33mbob@bob.dev >[0m mail -s 't5678: Task candidate t5678c1 completed and ready for QA.' qa@site.com
+ [2;33mbob@bob.dev >[0m : ...
+ [2;33mbob@bob.dev >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m'## QA (clara) tests task candidate t5678c1.'[0m
+ [2;31m>[0m ssh clara@clara.qa
+ [2;34mclara@clara.qa >[0m mkdir -p export/t/t5678c1
+ [2;34mclara@clara.qa >[0m cd export/t/t5678c1
+ [2;34mclara@clara.qa >[0m git clone git@git.site.com/bob/app
+Cloning into app...
+ [2;34mclara@clara.qa >[0m cd app
+ [2;34mclara@clara.qa >[0m comment [1m[4m'### QA checkout t5678c1.'[0m
+ [2;34mclara@clara.qa >[0m git checkout t5678c1
+Switched to a new branch 't5678c1'
+Branch t5678c1 set up to track remote branch t5678c1 from origin.
+ [2;34mclara@clara.qa >[0m git branch --color
+  master[m
+* [32mt5678c1[m
+ [2;34mclara@clara.qa >[0m comment [1m[4m'### QA (clara) runs tests.'[0m
+ [2;34mclara@clara.qa >[0m ./test.sh
+./test.sh: ./foo.sh param
+./test.sh: fgrep -q './foo.sh t1234' result.out
+./test.sh: ./bar.sh param
+./test.sh: fgrep -q './bar.sh t5678 param' result.out
+./test.sh: rm result.out
+./test.sh: : OK
+./test.sh: : exit 0: : OK
+ [2;34mclara@clara.qa >[0m bash ./foo.sh arg
+ [2;34mclara@clara.qa >[0m fgrep -q './foo.sh t1234' result.out
+ [2;34mclara@clara.qa >[0m bash ./bar.sh arg
+ [2;34mclara@clara.qa >[0m fgrep -q './bar.sh t5678 arg' result.out
+ [2;34mclara@clara.qa >[0m comment [1m[4m'### QA (clara) marks task approved, tags task candidate.'[0m
+ [2;34mclara@clara.qa >[0m task t5678 approved
+ [2;34mclara@clara.qa >[0m : ...
+ [2;34mclara@clara.qa >[0m git tag -a -m 't5678: clara approved t5678c1 as t5678a1.' t5678a1
+ [2;34mclara@clara.qa >[0m git tag -l
+t5678a1
+ [2;34mclara@clara.qa >[0m git push --tags
+To git@git.site.com/bob/app
+ * [new tag]         t5678a1 -> t5678a1
+ [2;34mclara@clara.qa >[0m mail -s 't5678: clara approved t5678c1 as r20110427a1.' bob@site.com rel@site.com
+ [2;34mclara@clara.qa >[0m : ...
+ [2;34mclara@clara.qa >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m'## RelEng (dave) rebases Release r20110427 branch.'[0m
+ [2;31m>[0m ssh dave@dave.dev
+ [2;35mdave@dave.dev >[0m cd export/r/r20110427/app
+ [2;35mdave@dave.dev >[0m git checkout master
+Switched to branch 'master'
+ [2;35mdave@dave.dev >[0m git pull
+From git@git.site.com/main/app
+   e927d28..8c14bbf  master     -> origin/master
+   e927d28..8c14bbf  r20110420  -> origin/r20110420
+ * [new tag]         r20110420c1 -> r20110420c1
+ * [new tag]         r20110420p1 -> r20110420p1
+ * [new tag]         t1234a1    -> t1234a1
+Updating e927d28..8c14bbf
+Fast-forward
+ foo.sh  |    2 +-
+ test.sh |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ [2;35mdave@dave.dev >[0m git checkout r20110427
+Switched to branch 'r20110427'
+ [2;35mdave@dave.dev >[0m git merge master
+Updating e927d28..8c14bbf
+Fast-forward
+ foo.sh  |    2 +-
+ test.sh |    2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+ [2;35mdave@dave.dev >[0m comment [1m[4m'## RelEng (dave) merges approved Task t5678 into Release r20110427 branch.'[0m
+ [2;35mdave@dave.dev >[0m git remote add -f bob git@git.site.com/bob/app
+Updating bob
+From git@git.site.com/bob/app
+ * [new branch]      master     -> bob/master
+ * [new branch]      t5678      -> bob/t5678
+ * [new branch]      t5678c1    -> bob/t5678c1
+ * [new tag]         t5678a1    -> t5678a1
+ [2;35mdave@dave.dev >[0m git checkout r20110427
+Already on 'r20110427'
+ [2;35mdave@dave.dev >[0m git merge t5678a1
+Updating 8c14bbf..e29cd7e
+Fast-forward
+ bar.sh  |    2 +-
+ test.sh |    6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+ [2;35mdave@dave.dev >[0m git commit -m 'r20110427: t5678' -a
+# On branch r20110427
+nothing to commit (working directory clean)
+ [2;35mdave@dave.dev >[0m : Fast-forward is OK
+ [2;35mdave@dave.dev >[0m git push origin r20110427
+To git@git.site.com/main/app
+   e927d28..e29cd7e  r20110427 -> r20110427
+ [2;35mdave@dave.dev >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m'## Integration Test of Release Candidate (RC).'[0m
+ [2;31m>[0m ssh prod@main.qa
+ [2;36mprod@main.qa >[0m mkdir -p export/r/r20110427
+ [2;36mprod@main.qa >[0m cd export/r/r20110427
+ [2;36mprod@main.qa >[0m git clone git@git.site.com/main/app
+Cloning into app...
+ [2;36mprod@main.qa >[0m cd app
+ [2;36mprod@main.qa >[0m git pull
+Already up-to-date.
+ [2;36mprod@main.qa >[0m git checkout r20110427
+Switched to a new branch 'r20110427'
+Branch r20110427 set up to track remote branch r20110427 from origin.
+ [2;36mprod@main.qa >[0m ./test.sh
+./test.sh: ./foo.sh param
+./test.sh: fgrep -q './foo.sh t1234' result.out
+./test.sh: ./bar.sh param
+./test.sh: fgrep -q './bar.sh t5678 param' result.out
+./test.sh: rm result.out
+./test.sh: : OK
+./test.sh: : exit 0: : OK
+ [2;36mprod@main.qa >[0m git tag -a -m 'r20110427: Release Candidate r20110427c1.' r20110427c1
+ [2;36mprod@main.qa >[0m git tag -l
+r20110420c1
+r20110420p1
+r20110427c1
+t1234a1
+ [2;36mprod@main.qa >[0m git push
+Everything up-to-date
+ [2;36mprod@main.qa >[0m git push --tags
+To git@git.site.com/main/app
+ * [new tag]         r20110427c1 -> r20110427c1
+ [2;36mprod@main.qa >[0m mail -c 'r20110427: Release Candiate r20110427c1 tagged.' release@site.com
+ [2;36mprod@main.qa >[0m : ...
+ [2;36mprod@main.qa >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m'## RelEng (dave) merges RC into main head and tags it.'[0m
+ [2;31m>[0m ssh dave@dave.dev
+ [2;35mdave@dave.dev >[0m cd export/r/r20110427/app
+ [2;35mdave@dave.dev >[0m comment [1m[4m'### RelEng (dave) updates from master.'[0m
+ [2;35mdave@dave.dev >[0m git fetch
+From git@git.site.com/main/app
+ * [new tag]         r20110427c1 -> r20110427c1
+ [2;35mdave@dave.dev >[0m git checkout master
+Switched to branch 'master'
+ [2;35mdave@dave.dev >[0m git pull
+Already up-to-date.
+ [2;35mdave@dave.dev >[0m comment [1m[4m'### RelEng (dave) merges rel candiate r20110427c1 and tags it into main master.'[0m
+ [2;35mdave@dave.dev >[0m git merge r20110427c1
+Updating 8c14bbf..e29cd7e
+Fast-forward
+ bar.sh  |    2 +-
+ test.sh |    6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+ [2;35mdave@dave.dev >[0m git commit -m 'r20110427: Release Candidate r20110427c1 as r20110427p1.' -a
+# On branch master
+# Your branch is ahead of 'origin/master' by 1 commit.
+#
+nothing to commit (working directory clean)
+ [2;35mdave@dave.dev >[0m : Fast-forward is OK
+ [2;35mdave@dave.dev >[0m git tag -a -m 'r20110427: Release Candidate r20110427p1.' r20110427p1
+ [2;35mdave@dave.dev >[0m git tag -l
+r20110420c1
+r20110420p1
+r20110427c1
+r20110427p1
+t1234a1
+t5678a1
+ [2;35mdave@dave.dev >[0m git push --tags origin
+To git@git.site.com/main/app
+ * [new tag]         r20110427p1 -> r20110427p1
+ * [new tag]         t5678a1 -> t5678a1
+ [2;35mdave@dave.dev >[0m mail -c 'r20110427: Release Candidate r20110427c1 merged to master and tagged r20110427p1' release@site.com production@site.com
+ [2;35mdave@dave.dev >[0m : ...
+ [2;35mdave@dave.dev >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m'## Ops deploys r20110427p1 tag.'[0m
+ [2;31m>[0m ssh prod@stage.prod
+ [2;36mprod@stage.prod >[0m cd export/web/app
+ [2;36mprod@stage.prod >[0m comment [1m[4m'### Ops pulls new tags and checkout r20110427p1.'[0m
+ [2;36mprod@stage.prod >[0m git tag -l
+ [2;36mprod@stage.prod >[0m git fetch
+From git@git.site.com/main/app
+   e927d28..8c14bbf  master     -> origin/master
+ * [new branch]      r20110420  -> origin/r20110420
+ * [new branch]      r20110427  -> origin/r20110427
+ * [new tag]         r20110420c1 -> r20110420c1
+ * [new tag]         r20110420p1 -> r20110420p1
+ * [new tag]         r20110427c1 -> r20110427c1
+ * [new tag]         r20110427p1 -> r20110427p1
+ * [new tag]         t1234a1    -> t1234a1
+ * [new tag]         t5678a1    -> t5678a1
+ [2;36mprod@stage.prod >[0m git tag -l
+r20110420c1
+r20110420p1
+r20110427c1
+r20110427p1
+t1234a1
+t5678a1
+ [2;36mprod@stage.prod >[0m git checkout r20110427p1
+ [2;36mprod@stage.prod >[0m fgrep -q 'You are in '\''detached HEAD'\'' state.' result.out
+ [2;36mprod@stage.prod >[0m git log
+commit e29cd7ef797096971008458dfdff8937c05b96f6
+Author: bob <bob@site.com>
+Date:   Fri Sep 9 16:50:13 2011 -0500
+
+    t5678: bar.sh: output t5678 with argument.
+
+commit 8c14bbf0d962d4f1239ef1052da10ec5bccf58fa
+Author: alice <alice@site.com>
+Date:   Fri Sep 9 16:50:10 2011 -0500
+
+    t1234: foo.sh: output t1234.
+
+commit e927d28f90fa01bbb2797836247a49f413fb622e
+Author: somebody <somebody@site.com>
+Date:   Fri Sep 9 16:50:09 2011 -0500
+
+    Initial main app.
+ [2;36mprod@stage.prod >[0m comment [1m[4m'### Ops runs sanity check.'[0m
+ [2;36mprod@stage.prod >[0m ./test.sh
+./test.sh: ./foo.sh param
+./test.sh: fgrep -q './foo.sh t1234' result.out
+./test.sh: ./bar.sh param
+./test.sh: fgrep -q './bar.sh t5678 param' result.out
+./test.sh: rm result.out
+./test.sh: : OK
+./test.sh: : exit 0: : OK
+ [2;36mprod@stage.prod >[0m ./foo.sh option
+ [2;36mprod@stage.prod >[0m fgrep -q './foo.sh t1234' result.out
+ [2;36mprod@stage.prod >[0m ./bar.sh option
+ [2;36mprod@stage.prod >[0m fgrep -q './bar.sh t5678 option' result.out
+ [2;36mprod@stage.prod >[0m comment [1m[4m'### Ops pushes r20110427p1 tag.'[0m
+ [2;36mprod@stage.prod >[0m rake push tag=r20110427p1
+ [2;36mprod@stage.prod >[0m : ...
+ [2;36mprod@stage.prod >[0m mail -c 'r20110427: Released r20110427p1.' production@site.com
+ [2;36mprod@stage.prod >[0m : ...
+ [2;36mprod@stage.prod >[0m logout
+LOGGED OUT
+
+ [2;31m>[0m comment [1m[4m'# Release r20110427 complete!'[0m

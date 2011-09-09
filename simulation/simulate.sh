@@ -347,7 +347,7 @@ task ${task} approved
 git tag -a -m "${task}: $user approved ${task}c1 as ${task}a1." ${task}a1
 git tag -l
 git push --tags
-mail -s '${task}: $user approved ${task}c1 as ${rel}a1.' $dev@$site rel@$site
+mail -s "${task}: $user approved ${task}c1 as ${rel}a1." $dev@$site rel@$site
 logout
 
 ###################################################################
@@ -520,7 +520,7 @@ task ${task} approved
 git tag -a -m "${task}: $user approved ${task}c1 as ${task}a1." ${task}a1
 git tag -l
 git push --tags
-mail -s '${task}: $user approved ${task}c1 as ${rel}a1.' $dev@$site rel@$site
+mail -s "${task}: $user approved ${task}c1 as ${rel}a1." $dev@$site rel@$site
 logout
 
 ###################################################################
